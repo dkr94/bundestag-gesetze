@@ -68,6 +68,8 @@
       <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
     </div>
   </div>
+  <div id="typHinweis" style="display:none; font-size:13px; color:#555; background:#f0f4ff; border-left:3px solid #99c2ee; border-radius:0 6px 6px 0; padding:8px 12px; margin-bottom:1rem; line-height:1.5;"></div>
+
   <div style="margin-bottom:1.25rem;">
     <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Bearbeitungsstatus</div>
     <div class="filter-row" id="statusRow">
@@ -218,11 +220,24 @@ function renderPage() {
 
 document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); } });
 document.getElementById('nextBtn').addEventListener('click', () => { const tp = Math.ceil(filtered.length / perPage); if (currentPage < tp - 1) { currentPage++; renderPage(); } });
+const TYP_BESCHREIBUNG = {
+  'Gesetzgebung': 'Konkreter Gesetzesentwurf, der in Kraft treten soll. Durchläuft mehrere Lesungen und wird abgestimmt. Ergebnis: neues oder geändertes Gesetz.',
+  'Antrag': 'Eine Fraktion fordert die Bundesregierung oder den Bundestag auf, etwas zu tun – ohne dass direkt ein Gesetz entsteht. Politisches Instrument, kein Gesetzgebungsverfahren.',
+  'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Die Regierung muss schriftlich antworten. Kleine Anfrage: nur schriftlich. Große Anfrage: kann zu einer Plenardebatte führen.',
+};
+
 document.getElementById('filterRow').addEventListener('click', e => {
   if (e.target.classList.contains('filter-btn')) {
     document.querySelectorAll('#filterRow .filter-btn').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     activeTyp = e.target.dataset.typ;
+    const hinweis = document.getElementById('typHinweis');
+    if (activeTyp && TYP_BESCHREIBUNG[activeTyp]) {
+      hinweis.textContent = TYP_BESCHREIBUNG[activeTyp];
+      hinweis.style.display = 'block';
+    } else {
+      hinweis.style.display = 'none';
+    }
     applyFilters();
   }
 });
