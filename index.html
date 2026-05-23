@@ -11,11 +11,11 @@
   .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
   .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
   .top-bar h1 { font-size: 20px; font-weight: 500; }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
   select, input[type="text"] { font-size: 13px; padding: 7px 11px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; }
-  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.5rem; }
   .filter-btn { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #ebebeb; border: 0.5px solid #d0d0d0; cursor: pointer; color: #555; transition: all 0.15s; }
   .filter-btn:hover, .filter-btn.active { background: #ddeeff; color: #0c447c; border-color: #99c2ee; }
+  .typ-hinweis { font-size: 13px; color: #555; background: #f0f4ff; border-left: 3px solid #99c2ee; border-radius: 0 6px 6px 0; padding: 8px 12px; margin-bottom: 1.25rem; line-height: 1.5; display: none; }
   .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
   .stat-card { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; border: 0.5px solid #e0e0e0; }
   .stat-label { font-size: 12px; color: #777; margin-bottom: 4px; }
@@ -40,6 +40,12 @@
   .detail-text { font-size: 13px; color: #1a1a1a; line-height: 1.6; }
   .detail-link { font-size: 12px; color: #185FA5; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; }
   .detail-link:hover { text-decoration: underline; }
+  .ki-btn { margin-top: 12px; font-size: 12px; padding: 6px 12px; border-radius: 8px; border: 0.5px solid #b0c4ee; background: #e8f0fe; color: #0c447c; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .ki-btn:hover { background: #d0e2ff; }
+  .ki-btn:disabled { opacity: 0.5; cursor: default; }
+  .ki-result { margin-top: 10px; background: #fff; border: 0.5px solid #c8d8f0; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #1a1a1a; line-height: 1.7; display: none; }
+  .ki-result.visible { display: block; }
+  .ki-label { font-size: 11px; font-weight: 500; color: #185FA5; margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
   .loading { text-align: center; padding: 3rem; color: #777; font-size: 14px; }
   .error-box { background: #fff0f0; border: 0.5px solid #f5b8b8; border-radius: 8px; padding: 1rem; color: #a32d2d; font-size: 13px; line-height: 1.6; }
   .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 1.5rem; }
@@ -54,30 +60,19 @@
 <div class="container">
   <div class="top-bar">
     <h1><i class="ti ti-building-bank" style="font-size:18px; vertical-align:-2px; margin-right:6px;"></i>Bundestag Gesetze</h1>
-    <div class="controls">
-      <input type="text" id="searchInput" placeholder="Suche..." style="width:200px;" />
-    </div>
+    <input type="text" id="searchInput" placeholder="Suche..." style="width:200px;" />
   </div>
 
-  <div style="margin-bottom:0.5rem;">
-    <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Typ</div>
-    <div class="filter-row" id="filterRow">
-      <button class="filter-btn active" data-typ="">Alle</button>
-      <button class="filter-btn" data-typ="Gesetzgebung">Gesetzgebung</button>
-      <button class="filter-btn" data-typ="Antrag">Antrag</button>
-      <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
-    </div>
+  <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Typ</div>
+  <div class="filter-row" id="filterRow">
+    <button class="filter-btn active" data-typ="">Alle</button>
+    <button class="filter-btn" data-typ="Gesetzgebung">Gesetzgebung</button>
+    <button class="filter-btn" data-typ="Antrag">Antrag</button>
+    <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
   </div>
-  <div id="typHinweis" style="display:none; font-size:13px; color:#555; background:#f0f4ff; border-left:3px solid #99c2ee; border-radius:0 6px 6px 0; padding:8px 12px; margin-bottom:1rem; line-height:1.5;"></div>
+  <div class="typ-hinweis" id="typHinweis"></div>
 
-  <div style="margin-bottom:1.25rem;">
-    <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Bearbeitungsstatus</div>
-    <div class="filter-row" id="statusRow">
-      <button class="filter-btn active" data-status="">Alle</button>
-    </div>
-  </div>
-
-  <div class="stats-row">
+  <div class="stats-row" style="margin-top:1rem;">
     <div class="stat-card"><div class="stat-label">Geladen</div><div class="stat-value" id="statTotal">–</div></div>
     <div class="stat-card"><div class="stat-label">Angezeigt</div><div class="stat-value" id="statShown">–</div></div>
     <div class="stat-card"><div class="stat-label">Wahlperiode</div><div class="stat-value">21</div></div>
@@ -92,8 +87,9 @@
 </div>
 
 <script>
-const API_KEY = 'OSOegLs.PR2lwJ1dwCeje9vTj7FPOt3hvpYKtwKkhw';
+const DIP_KEY = 'OSOegLs.PR2lwJ1dwCeje9vTj7FPOt3hvpYKkhw';
 const BASE = 'https://search.dip.bundestag.de/api/v1';
+const PROXY = 'https://corsproxy.io/?';
 
 const FRAKTION_FARBEN = {
   'SPD':{ bg:'#FAECE7', color:'#993C1D' },
@@ -106,6 +102,12 @@ const FRAKTION_FARBEN = {
   'AfD':{ bg:'#F1EFE8', color:'#444441' },
   'Die Linke':{ bg:'#FBEAF0', color:'#723554' },
   'BSW':{ bg:'#FBEAF0', color:'#72243E' },
+};
+
+const TYP_BESCHREIBUNG = {
+  'Gesetzgebung': 'Konkreter Gesetzesentwurf, der in Kraft treten soll. Durchläuft mehrere Lesungen und wird abgestimmt. Ergebnis: neues oder geändertes Gesetz.',
+  'Antrag': 'Eine Fraktion fordert die Bundesregierung oder den Bundestag auf, etwas zu tun – ohne dass direkt ein Gesetz entsteht. Politisches Instrument, kein Gesetzgebungsverfahren.',
+  'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Die Regierung muss schriftlich antworten. Kleine Anfrage: nur schriftlich. Große Anfrage: kann zu einer Plenardebatte führen.',
 };
 
 function getFraktionStyle(name) {
@@ -126,16 +128,41 @@ function getStatusBadge(status) {
   return { cls:'badge-amber', label: status.substring(0,30) };
 }
 
+async function fetchKIZusammenfassung(item) {
+  const inhalt = [
+    `Titel: ${item.titel || ''}`,
+    item.abstract ? `Beschreibung: ${item.abstract}` : '',
+    item.deskriptor ? `Schlagworte: ${item.deskriptor.map(d => d.name).join(', ')}` : '',
+    item.vorgangstyp ? `Typ: ${item.vorgangstyp}` : '',
+    item.beratungsstand ? `Status: ${item.beratungsstand}` : '',
+  ].filter(Boolean).join('\n');
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: `Du bist ein politischer Assistent. Fasse den folgenden Bundestagsvorgang in 3-4 Sätzen auf verständlichem Deutsch zusammen. Erkläre worum es geht, was das Ziel ist und welche Relevanz das für Bürgerinnen und Bürger hat. Keine Einleitung, keine Floskeln, direkt mit der Zusammenfassung beginnen.\n\n${inhalt}`
+      }]
+    })
+  });
+
+  if (!res.ok) throw new Error(`API Fehler ${res.status}`);
+  const data = await res.json();
+  return data.content?.[0]?.text || 'Keine Antwort erhalten.';
+}
+
 let allItems = [], filtered = [], currentPage = 0;
 const perPage = 10;
-let activeTyp = '', activeStatus = '', searchTerm = '', openId = null;
+let activeTyp = '', searchTerm = '', openId = null;
 
 async function fetchVorgaenge() {
   try {
-    const params = new URLSearchParams({ apikey: API_KEY, 'f.wahlperiode':'21', format:'json', rows:'100' });
-    const proxyUrl = "https://corsproxy.io/?";
-    const targetUrl = `${BASE}/vorgang?${params}`;
-    const res = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+    const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode':'21', format:'json', rows:'100' });
+    const res = await fetch(PROXY + encodeURIComponent(`${BASE}/vorgang?${params}`));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.documents || [];
@@ -145,9 +172,8 @@ async function fetchVorgaenge() {
 function applyFilters() {
   filtered = allItems.filter(item => {
     const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp.includes(activeTyp));
-    const matchStatus = !activeStatus || (item.beratungsstand && item.beratungsstand === activeStatus);
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchTyp && matchStatus && matchSearch;
+    return matchTyp && matchSearch;
   });
   currentPage = 0;
   document.getElementById('statShown').textContent = filtered.length;
@@ -165,15 +191,17 @@ function renderPage() {
   }
   container.innerHTML = '<div class="list" id="itemList"></div>';
   const list = document.getElementById('itemList');
+
   pageItems.forEach(item => {
     const div = document.createElement('div');
     div.className = 'item';
-    const badge = getStatusBadge(item.beratungsstand || item.initiative);
+    const badge = getStatusBadge(item.beratungsstand);
     const fraktion = item.initiative?.[0] || '';
     const fStyle = getFraktionStyle(fraktion);
     const datum = item.datum ? new Date(item.datum).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
     const titel = item.titel || '(kein Titel)';
     const kurzTitel = titel.length > 120 ? titel.substring(0,120) + '…' : titel;
+
     div.innerHTML = `
       <div class="item-top">
         <div class="item-title">${kurzTitel}</div>
@@ -187,13 +215,22 @@ function renderPage() {
       <div class="detail-panel" id="detail-${item.id}">
         <div class="detail-label">Vorgangsnummer</div>
         <div class="detail-text">${item.id || '–'}</div>
-        ${item.abstract ? `<div class="detail-label">Kurzbeschreibung</div><div class="detail-text">${item.abstract}</div>` : ''}
+        ${item.abstract ? `<div class="detail-label">Originalbeschreibung</div><div class="detail-text">${item.abstract}</div>` : ''}
         ${item.deskriptor ? `<div class="detail-label">Schlagworte</div><div class="detail-text">${item.deskriptor.map(d => d.name).join(', ')}</div>` : ''}
+        <button class="ki-btn" id="ki-btn-${item.id}">
+          <i class="ti ti-sparkles" style="font-size:13px;"></i> KI-Zusammenfassung erstellen
+        </button>
+        <div class="ki-result" id="ki-result-${item.id}">
+          <div class="ki-label"><i class="ti ti-sparkles" style="font-size:12px;"></i> KI-Zusammenfassung</div>
+          <div id="ki-text-${item.id}"></div>
+        </div>
         <a class="detail-link" href="https://dip.bundestag.de/vorgang/${item.id}" target="_blank">
           <i class="ti ti-external-link" style="font-size:13px;"></i> Im Bundestag öffnen
         </a>
       </div>`;
-    div.addEventListener('click', () => {
+
+    div.addEventListener('click', (e) => {
+      if (e.target.closest('.ki-btn') || e.target.closest('.detail-link')) return;
       const panel = document.getElementById(`detail-${item.id}`);
       if (openId && openId !== item.id) {
         const old = document.getElementById(`detail-${openId}`);
@@ -202,8 +239,31 @@ function renderPage() {
       panel.classList.toggle('open');
       openId = panel.classList.contains('open') ? item.id : null;
     });
+
     list.appendChild(div);
+
+    document.getElementById(`ki-btn-${item.id}`).addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const btn = document.getElementById(`ki-btn-${item.id}`);
+      const result = document.getElementById(`ki-result-${item.id}`);
+      const text = document.getElementById(`ki-text-${item.id}`);
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ti ti-loader" style="font-size:13px;"></i> Wird erstellt…';
+      result.classList.remove('visible');
+      try {
+        const zusammenfassung = await fetchKIZusammenfassung(item);
+        text.textContent = zusammenfassung;
+        result.classList.add('visible');
+        btn.style.display = 'none';
+      } catch(err) {
+        text.textContent = 'Fehler beim Abrufen der Zusammenfassung. Bitte erneut versuchen.';
+        result.classList.add('visible');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-sparkles" style="font-size:13px;"></i> Erneut versuchen';
+      }
+    });
   });
+
   const totalPages = Math.ceil(filtered.length / perPage);
   const pg = document.getElementById('pagination');
   if (totalPages > 1) {
@@ -216,11 +276,6 @@ function renderPage() {
 
 document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); } });
 document.getElementById('nextBtn').addEventListener('click', () => { const tp = Math.ceil(filtered.length / perPage); if (currentPage < tp - 1) { currentPage++; renderPage(); } });
-const TYP_BESCHREIBUNG = {
-  'Gesetzgebung': 'Konkreter Gesetzesentwurf, der in Kraft treten soll. Durchläuft mehrere Lesungen und wird abgestimmt. Ergebnis: neues oder geändertes Gesetz.',
-  'Antrag': 'Eine Fraktion fordert die Bundesregierung oder den Bundestag auf, etwas zu tun – ohne dass direkt ein Gesetz entsteht. Politisches Instrument, kein Gesetzgebungsverfahren.',
-  'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Die Regierung muss schriftlich antworten. Kleine Anfrage: nur schriftlich. Große Anfrage: kann zu einer Plenardebatte führen.',
-};
 
 document.getElementById('filterRow').addEventListener('click', e => {
   if (e.target.classList.contains('filter-btn')) {
@@ -237,14 +292,7 @@ document.getElementById('filterRow').addEventListener('click', e => {
     applyFilters();
   }
 });
-document.getElementById('statusRow').addEventListener('click', e => {
-  if (e.target.classList.contains('filter-btn')) {
-    document.querySelectorAll('#statusRow .filter-btn').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    activeStatus = e.target.dataset.status;
-    applyFilters();
-  }
-});
+
 document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; applyFilters(); });
 
 (async () => {
@@ -256,17 +304,6 @@ document.getElementById('searchInput').addEventListener('input', e => { searchTe
   allItems = docs;
   document.getElementById('statTotal').textContent = docs.length;
   document.getElementById('statShown').textContent = docs.length;
-
-  const statusWerte = [...new Set(docs.map(d => d.beratungsstand).filter(Boolean))].sort();
-  const statusRow = document.getElementById('statusRow');
-  statusWerte.forEach(wert => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-btn';
-    btn.dataset.status = wert;
-    btn.textContent = wert;
-    statusRow.appendChild(btn);
-  });
-
   filtered = [...allItems];
   renderPage();
 })();
