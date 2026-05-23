@@ -89,7 +89,6 @@
 <script>
 const DIP_KEY = 'OSOegLs.PR2lwJ1dwCeje9vTj7FPOt3hvpYKtwKkhw';
 const BASE = 'https://search.dip.bundestag.de/api/v1';
-const PROXY = 'https://corsproxy.io/?';
 
 const FRAKTION_FARBEN = {
   'SPD':{ bg:'#FAECE7', color:'#993C1D' },
@@ -160,13 +159,22 @@ const perPage = 10;
 let activeTyp = '', searchTerm = '', openId = null;
 
 async function fetchVorgaenge() {
-  try {
-    const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode':'21', format:'json', rows:'100' });
-    const res = await fetch(PROXY + encodeURIComponent(`${BASE}/vorgang?${params}`));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data.documents || [];
-  } catch(e) { return null; }
+  const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode':'21', format:'json', rows:'100' });
+  const targetUrl = `${BASE}/vorgang?${params}`;
+  const proxies = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://cors.sh/${url}`,
+  ];
+  for (const proxy of proxies) {
+    try {
+      const res = await fetch(proxy(targetUrl), { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data.documents) return data.documents;
+    } catch(e) { continue; }
+  }
+  return null;
 }
 
 function applyFilters() {
@@ -298,7 +306,7 @@ document.getElementById('searchInput').addEventListener('input', e => { searchTe
 (async () => {
   const docs = await fetchVorgaenge();
   if (!docs) {
-    document.getElementById('listContainer').innerHTML = `<div class="error-box"><strong>API nicht erreichbar.</strong><br>Mögliche Ursache: CORS-Einschränkung im Browser. Auf GitHub Pages funktioniert das korrekt.<br><a href="https://dip.bundestag.de" target="_blank" style="color:#a32d2d;">Direkt auf dip.bundestag.de öffnen</a></div>`;
+    document.getElementById('listContainer').innerHTML = `<div class="error-box"><strong>API nicht erreichbar.</strong><br>Alle Verbindungsversuche sind fehlgeschlagen. Bitte Seite neu laden oder später erneut versuchen.<br><a href="https://dip.bundestag.de" target="_blank" style="color:#a32d2d;">Direkt auf dip.bundestag.de öffnen</a></div>`;
     return;
   }
   allItems = docs;
