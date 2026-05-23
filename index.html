@@ -8,14 +8,23 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; }
-  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
   .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
   .top-bar h1 { font-size: 20px; font-weight: 500; }
-  select, input[type="text"] { font-size: 13px; padding: 7px 11px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; }
-  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.5rem; }
-  .filter-btn { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #ebebeb; border: 0.5px solid #d0d0d0; cursor: pointer; color: #555; transition: all 0.15s; }
+  input[type="text"], input[type="date"], select { font-size: 13px; padding: 7px 11px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; }
+  .filter-section { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .filter-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; min-width: 90px; flex-shrink: 0; }
+  .filter-btn { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #ebebeb; border: 0.5px solid #d0d0d0; cursor: pointer; color: #555; transition: all 0.15s; white-space: nowrap; }
   .filter-btn:hover, .filter-btn.active { background: #ddeeff; color: #0c447c; border-color: #99c2ee; }
-  .typ-hinweis { font-size: 13px; color: #555; background: #f0f4ff; border-left: 3px solid #99c2ee; border-radius: 0 6px 6px 0; padding: 8px 12px; margin-bottom: 1.25rem; line-height: 1.5; display: none; }
+  .wp-select { font-size: 13px; padding: 5px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; }
+  .wp-label { font-size: 12px; color: #777; }
+  .date-range { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .date-range input[type="date"] { font-size: 12px; padding: 5px 8px; }
+  .date-sep { font-size: 12px; color: #999; }
+  .clear-btn { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: none; border: 0.5px solid #ccc; cursor: pointer; color: #888; }
+  .clear-btn:hover { border-color: #aaa; color: #555; }
+  .typ-hinweis { font-size: 13px; color: #555; background: #f0f4ff; border-left: 3px solid #99c2ee; border-radius: 0 6px 6px 0; padding: 8px 12px; margin-bottom: 1rem; line-height: 1.5; display: none; }
   .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
   .stat-card { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; border: 0.5px solid #e0e0e0; }
   .stat-label { font-size: 12px; color: #777; margin-bottom: 4px; }
@@ -40,12 +49,6 @@
   .detail-text { font-size: 13px; color: #1a1a1a; line-height: 1.6; }
   .detail-link { font-size: 12px; color: #185FA5; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; }
   .detail-link:hover { text-decoration: underline; }
-  .ki-btn { margin-top: 12px; font-size: 12px; padding: 6px 12px; border-radius: 8px; border: 0.5px solid #b0c4ee; background: #e8f0fe; color: #0c447c; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.15s; }
-  .ki-btn:hover { background: #d0e2ff; }
-  .ki-btn:disabled { opacity: 0.5; cursor: default; }
-  .ki-result { margin-top: 10px; background: #fff; border: 0.5px solid #c8d8f0; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #1a1a1a; line-height: 1.7; display: none; }
-  .ki-result.visible { display: block; }
-  .ki-label { font-size: 11px; font-weight: 500; color: #185FA5; margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
   .loading { text-align: center; padding: 3rem; color: #777; font-size: 14px; }
   .error-box { background: #fff0f0; border: 0.5px solid #f5b8b8; border-radius: 8px; padding: 1rem; color: #a32d2d; font-size: 13px; line-height: 1.6; }
   .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 1.5rem; }
@@ -53,7 +56,7 @@
   .pagination button { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; cursor: pointer; }
   .pagination button:disabled { opacity: 0.4; cursor: default; }
   .empty { text-align: center; padding: 2rem; color: #777; font-size: 14px; }
-  @media (max-width: 600px) { .top-bar { flex-direction: column; align-items: flex-start; } }
+  @media (max-width: 600px) { .top-bar { flex-direction: column; align-items: flex-start; } .filter-label { min-width: 70px; } }
 </style>
 </head>
 <body>
@@ -63,19 +66,61 @@
     <input type="text" id="searchInput" placeholder="Suche..." style="width:200px;" />
   </div>
 
-  <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Typ</div>
-  <div class="filter-row" id="filterRow">
-    <button class="filter-btn active" data-typ="">Alle</button>
-    <button class="filter-btn" data-typ="Gesetzgebung">Gesetzgebung</button>
-    <button class="filter-btn" data-typ="Antrag">Antrag</button>
-    <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
+  <div class="filter-section">
+
+    <!-- Wahlperiode -->
+    <div class="filter-row">
+      <span class="filter-label">Wahlperiode</span>
+      <select class="wp-select" id="wahlperiodeSelect">
+        <option value="21">21. Wahlperiode (2025 – heute)</option>
+        <option value="20">20. Wahlperiode (2021 – 2025)</option>
+        <option value="19">19. Wahlperiode (2017 – 2021)</option>
+        <option value="18">18. Wahlperiode (2013 – 2017)</option>
+        <option value="17">17. Wahlperiode (2009 – 2013)</option>
+      </select>
+    </div>
+
+    <!-- Zeitraum Schnellauswahl -->
+    <div class="filter-row" id="zeitraumRow">
+      <span class="filter-label">Zeitraum</span>
+      <button class="filter-btn active" data-zeitraum="">Alle</button>
+      <button class="filter-btn" data-zeitraum="7">Diese Woche</button>
+      <button class="filter-btn" data-zeitraum="30">Dieser Monat</button>
+      <button class="filter-btn" data-zeitraum="90">Dieses Quartal</button>
+      <button class="filter-btn" data-zeitraum="365">Dieses Jahr</button>
+      <button class="filter-btn" data-zeitraum="custom">Eigener Zeitraum</button>
+    </div>
+
+    <!-- Eigener Zeitraum -->
+    <div class="filter-row" id="customDateRow" style="display:none;">
+      <span class="filter-label">Von / Bis</span>
+      <div class="date-range">
+        <input type="date" id="dateFrom" />
+        <span class="date-sep">bis</span>
+        <input type="date" id="dateTo" />
+        <button class="clear-btn" id="clearDates">× Zurücksetzen</button>
+      </div>
+    </div>
+
+    <!-- Typ -->
+    <div class="filter-row">
+      <span class="filter-label">Typ</span>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;" id="filterRow">
+        <button class="filter-btn active" data-typ="">Alle</button>
+        <button class="filter-btn" data-typ="Gesetzgebung">Gesetzgebung</button>
+        <button class="filter-btn" data-typ="Antrag">Antrag</button>
+        <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
+      </div>
+    </div>
+
   </div>
+
   <div class="typ-hinweis" id="typHinweis"></div>
 
-  <div class="stats-row" style="margin-top:1rem;">
+  <div class="stats-row">
     <div class="stat-card"><div class="stat-label">Geladen</div><div class="stat-value" id="statTotal">–</div></div>
     <div class="stat-card"><div class="stat-label">Angezeigt</div><div class="stat-value" id="statShown">–</div></div>
-    <div class="stat-card"><div class="stat-label">Wahlperiode</div><div class="stat-value">21</div></div>
+    <div class="stat-card"><div class="stat-label">Wahlperiode</div><div class="stat-value" id="statWP">21</div></div>
   </div>
 
   <div id="listContainer"><div class="loading"><i class="ti ti-loader"></i> Daten werden geladen…</div></div>
@@ -109,6 +154,13 @@ const TYP_BESCHREIBUNG = {
   'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Die Regierung muss schriftlich antworten. Kleine Anfrage: nur schriftlich. Große Anfrage: kann zu einer Plenardebatte führen.',
 };
 
+function slugify(text) {
+  if (!text) return '';
+  return text.toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+}
+
 function getFraktionStyle(name) {
   if (!name) return { bg:'#F1EFE8', color:'#444441' };
   for (const key of Object.keys(FRAKTION_FARBEN)) {
@@ -127,39 +179,8 @@ function getStatusBadge(status) {
   return { cls:'badge-amber', label: status.substring(0,30) };
 }
 
-async function fetchKIZusammenfassung(item) {
-  const inhalt = [
-    `Titel: ${item.titel || ''}`,
-    item.abstract ? `Beschreibung: ${item.abstract}` : '',
-    item.deskriptor ? `Schlagworte: ${item.deskriptor.map(d => d.name).join(', ')}` : '',
-    item.vorgangstyp ? `Typ: ${item.vorgangstyp}` : '',
-    item.beratungsstand ? `Status: ${item.beratungsstand}` : '',
-  ].filter(Boolean).join('\n');
-
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{
-        role: 'user',
-        content: `Du bist ein politischer Assistent. Fasse den folgenden Bundestagsvorgang in 3-4 Sätzen auf verständlichem Deutsch zusammen. Erkläre worum es geht, was das Ziel ist und welche Relevanz das für Bürgerinnen und Bürger hat. Keine Einleitung, keine Floskeln, direkt mit der Zusammenfassung beginnen.\n\n${inhalt}`
-      }]
-    })
-  });
-
-  if (!res.ok) throw new Error(`API Fehler ${res.status}`);
-  const data = await res.json();
-  return data.content?.[0]?.text || 'Keine Antwort erhalten.';
-}
-
-let allItems = [], filtered = [], currentPage = 0;
-const perPage = 10;
-let activeTyp = '', searchTerm = '', openId = null;
-
-async function fetchVorgaenge() {
-  const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode':'21', format:'json', rows:'100' });
+async function fetchVorgaenge(wahlperiode) {
+  const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'100' });
   const targetUrl = `${BASE}/vorgang?${params}`;
   const proxies = [
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
@@ -177,11 +198,38 @@ async function fetchVorgaenge() {
   return null;
 }
 
+let allItems = [], filtered = [], currentPage = 0;
+const perPage = 10;
+let activeTyp = '', searchTerm = '', openId = null;
+let zeitraumTage = '';
+let dateFrom = '', dateTo = '';
+
+function getDateFilter() {
+  if (dateFrom || dateTo) {
+    const from = dateFrom ? new Date(dateFrom) : null;
+    const to = dateTo ? new Date(dateTo + 'T23:59:59') : null;
+    return item => {
+      if (!item.datum) return false;
+      const d = new Date(item.datum);
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      return true;
+    };
+  }
+  if (zeitraumTage && zeitraumTage !== 'custom') {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - parseInt(zeitraumTage));
+    return item => item.datum && new Date(item.datum) >= cutoff;
+  }
+  return () => true;
+}
+
 function applyFilters() {
+  const dateFn = getDateFilter();
   filtered = allItems.filter(item => {
     const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp.includes(activeTyp));
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchTyp && matchSearch;
+    return matchTyp && matchSearch && dateFn(item);
   });
   currentPage = 0;
   document.getElementById('statShown').textContent = filtered.length;
@@ -193,7 +241,7 @@ function renderPage() {
   const pageItems = filtered.slice(start, start + perPage);
   const container = document.getElementById('listContainer');
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty">Keine Ergebnisse gefunden.</div>';
+    container.innerHTML = '<div class="empty">Keine Einträge für diesen Zeitraum gefunden.</div>';
     document.getElementById('pagination').style.display = 'none';
     return;
   }
@@ -209,6 +257,7 @@ function renderPage() {
     const datum = item.datum ? new Date(item.datum).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
     const titel = item.titel || '(kein Titel)';
     const kurzTitel = titel.length > 120 ? titel.substring(0,120) + '…' : titel;
+    const dipUrl = `https://dip.bundestag.de/vorgang/${slugify(titel)}/${item.id}`;
 
     div.innerHTML = `
       <div class="item-top">
@@ -223,22 +272,16 @@ function renderPage() {
       <div class="detail-panel" id="detail-${item.id}">
         <div class="detail-label">Vorgangsnummer</div>
         <div class="detail-text">${item.id || '–'}</div>
-        ${item.abstract ? `<div class="detail-label">Originalbeschreibung</div><div class="detail-text">${item.abstract}</div>` : ''}
+        ${item.beratungsstand ? `<div class="detail-label">Beratungsstand</div><div class="detail-text">${item.beratungsstand}</div>` : ''}
+        ${item.abstract ? `<div class="detail-label">Beschreibung</div><div class="detail-text">${item.abstract}</div>` : ''}
         ${item.deskriptor ? `<div class="detail-label">Schlagworte</div><div class="detail-text">${item.deskriptor.map(d => d.name).join(', ')}</div>` : ''}
-        <button class="ki-btn" id="ki-btn-${item.id}">
-          <i class="ti ti-sparkles" style="font-size:13px;"></i> KI-Zusammenfassung erstellen
-        </button>
-        <div class="ki-result" id="ki-result-${item.id}">
-          <div class="ki-label"><i class="ti ti-sparkles" style="font-size:12px;"></i> KI-Zusammenfassung</div>
-          <div id="ki-text-${item.id}"></div>
-        </div>
-        <a class="detail-link" href="https://dip.bundestag.de/vorgang/${item.id}" target="_blank">
+        <a class="detail-link" href="${dipUrl}" target="_blank">
           <i class="ti ti-external-link" style="font-size:13px;"></i> Im Bundestag öffnen
         </a>
       </div>`;
 
     div.addEventListener('click', (e) => {
-      if (e.target.closest('.ki-btn') || e.target.closest('.detail-link')) return;
+      if (e.target.closest('.detail-link')) return;
       const panel = document.getElementById(`detail-${item.id}`);
       if (openId && openId !== item.id) {
         const old = document.getElementById(`detail-${openId}`);
@@ -249,27 +292,6 @@ function renderPage() {
     });
 
     list.appendChild(div);
-
-    document.getElementById(`ki-btn-${item.id}`).addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const btn = document.getElementById(`ki-btn-${item.id}`);
-      const result = document.getElementById(`ki-result-${item.id}`);
-      const text = document.getElementById(`ki-text-${item.id}`);
-      btn.disabled = true;
-      btn.innerHTML = '<i class="ti ti-loader" style="font-size:13px;"></i> Wird erstellt…';
-      result.classList.remove('visible');
-      try {
-        const zusammenfassung = await fetchKIZusammenfassung(item);
-        text.textContent = zusammenfassung;
-        result.classList.add('visible');
-        btn.style.display = 'none';
-      } catch(err) {
-        text.textContent = 'Fehler beim Abrufen der Zusammenfassung. Bitte erneut versuchen.';
-        result.classList.add('visible');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="ti ti-sparkles" style="font-size:13px;"></i> Erneut versuchen';
-      }
-    });
   });
 
   const totalPages = Math.ceil(filtered.length / perPage);
@@ -282,39 +304,76 @@ function renderPage() {
   } else { pg.style.display = 'none'; }
 }
 
-document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); } });
-document.getElementById('nextBtn').addEventListener('click', () => { const tp = Math.ceil(filtered.length / perPage); if (currentPage < tp - 1) { currentPage++; renderPage(); } });
-
-document.getElementById('filterRow').addEventListener('click', e => {
-  if (e.target.classList.contains('filter-btn')) {
-    document.querySelectorAll('#filterRow .filter-btn').forEach(b => b.classList.remove('active'));
-    e.target.classList.add('active');
-    activeTyp = e.target.dataset.typ;
-    const hinweis = document.getElementById('typHinweis');
-    if (activeTyp && TYP_BESCHREIBUNG[activeTyp]) {
-      hinweis.textContent = TYP_BESCHREIBUNG[activeTyp];
-      hinweis.style.display = 'block';
-    } else {
-      hinweis.style.display = 'none';
-    }
-    applyFilters();
-  }
-});
-
-document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; applyFilters(); });
-
-(async () => {
-  const docs = await fetchVorgaenge();
+async function loadWahlperiode(wp) {
+  document.getElementById('listContainer').innerHTML = '<div class="loading"><i class="ti ti-loader"></i> Daten werden geladen…</div>';
+  document.getElementById('pagination').style.display = 'none';
+  document.getElementById('statTotal').textContent = '–';
+  document.getElementById('statShown').textContent = '–';
+  document.getElementById('statWP').textContent = wp;
+  const docs = await fetchVorgaenge(wp);
   if (!docs) {
-    document.getElementById('listContainer').innerHTML = `<div class="error-box"><strong>API nicht erreichbar.</strong><br>Alle Verbindungsversuche sind fehlgeschlagen. Bitte Seite neu laden oder später erneut versuchen.<br><a href="https://dip.bundestag.de" target="_blank" style="color:#a32d2d;">Direkt auf dip.bundestag.de öffnen</a></div>`;
+    document.getElementById('listContainer').innerHTML = `<div class="error-box"><strong>API nicht erreichbar.</strong><br>Alle Verbindungsversuche sind fehlgeschlagen. Bitte Seite neu laden.<br><a href="https://dip.bundestag.de" target="_blank" style="color:#a32d2d;">Direkt auf dip.bundestag.de öffnen</a></div>`;
     return;
   }
   allItems = docs;
   document.getElementById('statTotal').textContent = docs.length;
-  document.getElementById('statShown').textContent = docs.length;
-  filtered = [...allItems];
-  renderPage();
-})();
+  applyFilters();
+}
+
+// Wahlperiode
+document.getElementById('wahlperiodeSelect').addEventListener('change', e => {
+  loadWahlperiode(e.target.value);
+});
+
+// Zeitraum Schnellauswahl
+document.getElementById('zeitraumRow').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-btn')) return;
+  document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  zeitraumTage = e.target.dataset.zeitraum;
+  dateFrom = ''; dateTo = '';
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  const customRow = document.getElementById('customDateRow');
+  customRow.style.display = zeitraumTage === 'custom' ? 'flex' : 'none';
+  if (zeitraumTage !== 'custom') applyFilters();
+});
+
+// Eigener Zeitraum
+document.getElementById('dateFrom').addEventListener('change', e => { dateFrom = e.target.value; applyFilters(); });
+document.getElementById('dateTo').addEventListener('change', e => { dateTo = e.target.value; applyFilters(); });
+document.getElementById('clearDates').addEventListener('click', () => {
+  dateFrom = ''; dateTo = '';
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  applyFilters();
+});
+
+// Typ
+document.getElementById('filterRow').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-btn')) return;
+  document.querySelectorAll('#filterRow .filter-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  activeTyp = e.target.dataset.typ;
+  const hinweis = document.getElementById('typHinweis');
+  if (activeTyp && TYP_BESCHREIBUNG[activeTyp]) {
+    hinweis.textContent = TYP_BESCHREIBUNG[activeTyp];
+    hinweis.style.display = 'block';
+  } else {
+    hinweis.style.display = 'none';
+  }
+  applyFilters();
+});
+
+// Suche
+document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; applyFilters(); });
+
+// Pagination
+document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); } });
+document.getElementById('nextBtn').addEventListener('click', () => { const tp = Math.ceil(filtered.length / perPage); if (currentPage < tp - 1) { currentPage++; renderPage(); } });
+
+// Start
+loadWahlperiode('21');
 </script>
 </body>
 </html>
