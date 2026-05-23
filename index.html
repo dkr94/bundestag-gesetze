@@ -74,10 +74,6 @@
     <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Bearbeitungsstatus</div>
     <div class="filter-row" id="statusRow">
       <button class="filter-btn active" data-status="">Alle</button>
-      <button class="filter-btn" data-status="Beratung">In Beratung</button>
-      <button class="filter-btn" data-status="Eingebracht">Eingebracht</button>
-      <button class="filter-btn" data-status="Beschlossen">Beschlossen</button>
-      <button class="filter-btn" data-status="Abgeschlossen">Abgeschlossen</button>
     </div>
   </div>
 
@@ -149,7 +145,7 @@ async function fetchVorgaenge() {
 function applyFilters() {
   filtered = allItems.filter(item => {
     const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp.includes(activeTyp));
-    const matchStatus = !activeStatus || (item.beratungsstand && item.beratungsstand.includes(activeStatus));
+    const matchStatus = !activeStatus || (item.beratungsstand && item.beratungsstand === activeStatus);
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchTyp && matchStatus && matchSearch;
   });
@@ -260,6 +256,17 @@ document.getElementById('searchInput').addEventListener('input', e => { searchTe
   allItems = docs;
   document.getElementById('statTotal').textContent = docs.length;
   document.getElementById('statShown').textContent = docs.length;
+
+  const statusWerte = [...new Set(docs.map(d => d.beratungsstand).filter(Boolean))].sort();
+  const statusRow = document.getElementById('statusRow');
+  statusWerte.forEach(wert => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.status = wert;
+    btn.textContent = wert;
+    statusRow.appendChild(btn);
+  });
+
   filtered = [...allItems];
   renderPage();
 })();
