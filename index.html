@@ -59,11 +59,24 @@
     </div>
   </div>
 
-  <div class="filter-row" id="filterRow">
-    <button class="filter-btn active" data-typ="">Alle</button>
-    <button class="filter-btn" data-typ="Gesetzgebung">Gesetzgebung</button>
-    <button class="filter-btn" data-typ="Antrag">Antrag</button>
-    <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
+  <div style="margin-bottom:0.5rem;">
+    <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Typ</div>
+    <div class="filter-row" id="filterRow">
+      <button class="filter-btn active" data-typ="">Alle</button>
+      <button class="filter-btn" data-typ="Gesetzgebung">Gesetzgebung</button>
+      <button class="filter-btn" data-typ="Antrag">Antrag</button>
+      <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
+    </div>
+  </div>
+  <div style="margin-bottom:1.25rem;">
+    <div style="font-size:11px; color:#999; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">Bearbeitungsstatus</div>
+    <div class="filter-row" id="statusRow">
+      <button class="filter-btn active" data-status="">Alle</button>
+      <button class="filter-btn" data-status="Beratung">In Beratung</button>
+      <button class="filter-btn" data-status="Eingebracht">Eingebracht</button>
+      <button class="filter-btn" data-status="Beschlossen">Beschlossen</button>
+      <button class="filter-btn" data-status="Abgeschlossen">Abgeschlossen</button>
+    </div>
   </div>
 
   <div class="stats-row">
@@ -117,7 +130,7 @@ function getStatusBadge(status) {
 
 let allItems = [], filtered = [], currentPage = 0;
 const perPage = 10;
-let activeTyp = '', searchTerm = '', openId = null;
+let activeTyp = '', activeStatus = '', searchTerm = '', openId = null;
 
 async function fetchVorgaenge() {
   try {
@@ -133,9 +146,10 @@ async function fetchVorgaenge() {
 
 function applyFilters() {
   filtered = allItems.filter(item => {
-    const matchTyp = !activeTyp || (item.typ && item.typ.includes(activeTyp));
+    const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp.includes(activeTyp));
+    const matchStatus = !activeStatus || (item.beratungsstand && item.beratungsstand.includes(activeStatus));
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchTyp && matchSearch;
+    return matchTyp && matchStatus && matchSearch;
   });
   currentPage = 0;
   document.getElementById('statShown').textContent = filtered.length;
@@ -169,7 +183,7 @@ function renderPage() {
       </div>
       <div class="item-meta">
         ${datum ? `<span class="meta-item"><i class="ti ti-calendar" style="font-size:13px;"></i>${datum}</span>` : ''}
-        ${item.typ ? `<span class="meta-item"><i class="ti ti-file-text" style="font-size:13px;"></i>${item.typ}</span>` : ''}
+        ${item.vorgangstyp ? `<span class="meta-item"><i class="ti ti-file-text" style="font-size:13px;"></i>${item.vorgangstyp}</span>` : ''}
         ${fraktion ? `<span class="fraktion-pill" style="background:${fStyle.bg}; color:${fStyle.color};">${fraktion}</span>` : ''}
       </div>
       <div class="detail-panel" id="detail-${item.id}">
@@ -206,9 +220,17 @@ document.getElementById('prevBtn').addEventListener('click', () => { if (current
 document.getElementById('nextBtn').addEventListener('click', () => { const tp = Math.ceil(filtered.length / perPage); if (currentPage < tp - 1) { currentPage++; renderPage(); } });
 document.getElementById('filterRow').addEventListener('click', e => {
   if (e.target.classList.contains('filter-btn')) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#filterRow .filter-btn').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     activeTyp = e.target.dataset.typ;
+    applyFilters();
+  }
+});
+document.getElementById('statusRow').addEventListener('click', e => {
+  if (e.target.classList.contains('filter-btn')) {
+    document.querySelectorAll('#statusRow .filter-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    activeStatus = e.target.dataset.status;
     applyFilters();
   }
 });
