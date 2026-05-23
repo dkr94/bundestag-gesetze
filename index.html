@@ -121,6 +121,7 @@
     <div class="stat-card"><div class="stat-label">Geladen</div><div class="stat-value" id="statTotal">–</div></div>
     <div class="stat-card"><div class="stat-label">Angezeigt</div><div class="stat-value" id="statShown">–</div></div>
     <div class="stat-card"><div class="stat-label">Wahlperiode</div><div class="stat-value" id="statWP">21</div></div>
+    <div class="stat-card"><div class="stat-label">Zeitraum aktiv</div><div class="stat-value" id="statZeitraum" style="font-size:13px; padding-top:4px;">Alle</div></div>
   </div>
 
   <div id="listContainer"><div class="loading"><i class="ti ti-loader"></i> Daten werden geladen…</div></div>
@@ -180,7 +181,7 @@ function getStatusBadge(status) {
 }
 
 async function fetchVorgaenge(wahlperiode) {
-  const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'100' });
+  const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'200', sort:'datum desc' });
   const targetUrl = `${BASE}/vorgang?${params}`;
   const proxies = [
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
@@ -204,13 +205,19 @@ let activeTyp = '', searchTerm = '', openId = null;
 let zeitraumTage = '';
 let dateFrom = '', dateTo = '';
 
+function parseDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function getDateFilter() {
   if (dateFrom || dateTo) {
-    const from = dateFrom ? new Date(dateFrom) : null;
-    const to = dateTo ? new Date(dateTo + 'T23:59:59') : null;
+    const from = dateFrom ? parseDate(dateFrom) : null;
+    const to = dateTo ? parseDate(dateTo + 'T23:59:59') : null;
     return item => {
-      if (!item.datum) return false;
-      const d = new Date(item.datum);
+      const d = parseDate(item.datum);
+      if (!d) return false;
       if (from && d < from) return false;
       if (to && d > to) return false;
       return true;
@@ -218,8 +225,12 @@ function getDateFilter() {
   }
   if (zeitraumTage && zeitraumTage !== 'custom') {
     const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
     cutoff.setDate(cutoff.getDate() - parseInt(zeitraumTage));
-    return item => item.datum && new Date(item.datum) >= cutoff;
+    return item => {
+      const d = parseDate(item.datum);
+      return d !== null && d >= cutoff;
+    };
   }
   return () => true;
 }
@@ -331,6 +342,8 @@ document.getElementById('zeitraumRow').addEventListener('click', e => {
   document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
   e.target.classList.add('active');
   zeitraumTage = e.target.dataset.zeitraum;
+  const labels = { '':'Alle', '7':'Diese Woche', '30':'Dieser Monat', '90':'Dieses Quartal', '365':'Dieses Jahr', 'custom':'Eigener Zeitraum' };
+  document.getElementById('statZeitraum').textContent = labels[zeitraumTage] || 'Eigener';
   dateFrom = ''; dateTo = '';
   document.getElementById('dateFrom').value = '';
   document.getElementById('dateTo').value = '';
