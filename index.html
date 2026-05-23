@@ -122,7 +122,9 @@ let activeTyp = '', searchTerm = '', openId = null;
 async function fetchVorgaenge() {
   try {
     const params = new URLSearchParams({ apikey: API_KEY, 'f.wahlperiode':'21', format:'json', rows:'100' });
-    const res = await fetch(`${BASE}/vorgang?${params}`);
+    const proxyUrl = "https://corsproxy.io/?";
+    const targetUrl = `${BASE}/vorgang?${params}`;
+    const res = await fetch(proxyUrl + encodeURIComponent(targetUrl));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     return data.documents || [];
