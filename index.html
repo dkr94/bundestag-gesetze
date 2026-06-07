@@ -3,146 +3,587 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bundestag Gesetze</title>
+<title>Bundestag Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; }
-  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
-  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
-  .top-bar h1 { font-size: 20px; font-weight: 500; }
-  input[type="text"], input[type="date"], select { font-size: 13px; padding: 7px 11px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; }
-  .filter-section { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
-  .filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .filter-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.05em; min-width: 90px; flex-shrink: 0; }
-  .filter-btn { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: #ebebeb; border: 0.5px solid #d0d0d0; cursor: pointer; color: #555; transition: all 0.15s; white-space: nowrap; }
-  .filter-btn:hover, .filter-btn.active { background: #ddeeff; color: #0c447c; border-color: #99c2ee; }
-  .wp-select { font-size: 13px; padding: 5px 10px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #1a1a1a; cursor: pointer; }
-  .wp-label { font-size: 12px; color: #777; }
-  .date-range { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .date-range input[type="date"] { font-size: 12px; padding: 5px 8px; }
-  .date-sep { font-size: 12px; color: #999; }
-  .clear-btn { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: none; border: 0.5px solid #ccc; cursor: pointer; color: #888; }
-  .clear-btn:hover { border-color: #aaa; color: #555; }
-  .typ-hinweis { font-size: 13px; color: #555; background: #f0f4ff; border-left: 3px solid #99c2ee; border-radius: 0 6px 6px 0; padding: 8px 12px; margin-bottom: 1rem; line-height: 1.5; display: none; }
-  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
-  .stat-card { background: #fff; border-radius: 8px; padding: 0.75rem 1rem; border: 0.5px solid #e0e0e0; }
-  .stat-label { font-size: 12px; color: #777; margin-bottom: 4px; }
-  .stat-value { font-size: 22px; font-weight: 500; }
-  .list { display: flex; flex-direction: column; gap: 8px; }
-  .item { background: #fff; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s; }
-  .item:hover { border-color: #aaa; }
-  .item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
-  .item-title { font-size: 14px; font-weight: 500; line-height: 1.4; flex: 1; }
-  .badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
-  .badge-blue { background: #E6F1FB; color: #0C447C; }
-  .badge-amber { background: #FAEEDA; color: #633806; }
-  .badge-green { background: #EAF3DE; color: #27500A; }
-  .badge-gray { background: #F1EFE8; color: #444441; }
-  .item-meta { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
-  .meta-item { font-size: 12px; color: #777; display: flex; align-items: center; gap: 4px; }
-  .fraktion-pill { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
-  .detail-panel { background: #f5f4f0; border-radius: 8px; padding: 1rem; margin-top: 10px; display: none; }
-  .detail-panel.open { display: block; }
-  .detail-label { font-size: 12px; font-weight: 500; color: #777; margin-top: 10px; margin-bottom: 3px; }
-  .detail-label:first-child { margin-top: 0; }
-  .detail-text { font-size: 13px; color: #1a1a1a; line-height: 1.6; }
-  .detail-link { font-size: 12px; color: #185FA5; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; }
-  .detail-link:hover { text-decoration: underline; }
-  .loading { text-align: center; padding: 3rem; color: #777; font-size: 14px; }
-  .error-box { background: #fff0f0; border: 0.5px solid #f5b8b8; border-radius: 8px; padding: 1rem; color: #a32d2d; font-size: 13px; line-height: 1.6; }
-  .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 1.5rem; }
-  .page-info { font-size: 13px; color: #777; }
-  .pagination button { font-size: 13px; padding: 6px 14px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; cursor: pointer; }
-  .pagination button:disabled { opacity: 0.4; cursor: default; }
-  .empty { text-align: center; padding: 2rem; color: #777; font-size: 14px; }
-  @media (max-width: 600px) { .top-bar { flex-direction: column; align-items: flex-start; } .filter-label { min-width: 70px; } }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #1B2B5E;
+  --navy-light: #243672;
+  --amber: #C8922A;
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --border: #E4E2DA;
+  --text: #111111;
+  --text-secondary: #6B6860;
+  --text-muted: #9E9C96;
+  --radius: 10px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: var(--navy);
+  padding: 0 2rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-brand .logo-mark {
+  width: 32px;
+  height: 32px;
+  background: var(--amber);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.header-brand h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.header-brand span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: block;
+  margin-top: -2px;
+}
+
+.header-search {
+  position: relative;
+}
+
+.header-search input {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 8px 12px 8px 36px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: #fff;
+  width: 240px;
+  outline: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.header-search input::placeholder { color: rgba(255,255,255,0.4); }
+.header-search input:focus { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); }
+
+.header-search .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.4);
+  font-size: 16px;
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 64px);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 1.25rem;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sidebar-section {
+  margin-bottom: 1.75rem;
+}
+
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-select {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239E9C96' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.filter-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-pill {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-pill:hover { background: var(--bg); color: var(--text); }
+
+.filter-pill.active {
+  background: var(--navy);
+  color: #fff;
+  font-weight: 500;
+}
+
+.filter-pill .pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.filter-pill.active .pill-dot { opacity: 1; background: var(--amber); }
+
+.sort-toggle {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.15s;
+}
+
+.sort-toggle:hover { border-color: var(--navy); }
+
+.date-inputs { display: flex; flex-direction: column; gap: 6px; }
+
+.date-inputs input[type="date"] {
+  width: 100%;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+
+.clear-link {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clear-link:hover { color: var(--text-secondary); }
+
+.typ-hinweis {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: #EEF2FF;
+  border-left: 2px solid var(--navy);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 10px;
+  line-height: 1.5;
+  margin-top: 8px;
+  display: none;
+}
+
+/* ── MAIN ── */
+.main {
+  padding: 1.75rem 2rem;
+}
+
+/* ── STATS BAR ── */
+.stats-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-chip .chip-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stat-chip .chip-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* ── CARD LIST ── */
+.card-list { display: flex; flex-direction: column; gap: 1px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  margin-bottom: 6px;
+  animation: fadeUp 0.2s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card:hover { border-color: #C5C3BB; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.card.open  { border-color: var(--navy); }
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+  flex: 1;
+}
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-blue   { background: #E6F1FB; color: #0C447C; }
+.badge-amber  { background: #FEF3E2; color: #92540A; }
+.badge-green  { background: #E6F4E6; color: #1A5C1A; }
+.badge-gray   { background: #F0EEE8; color: #555350; }
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fraktion-tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* ── DETAIL PANEL ── */
+.detail-panel {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.detail-panel.open { display: block; }
+
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+.detail-field {}
+.detail-field-label { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+.detail-field-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+.detail-field.wide { grid-column: 1 / -1; }
+
+.dip-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--navy);
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid var(--navy);
+  border-radius: 7px;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+
+.dip-link:hover { background: var(--navy); color: #fff; }
+
+/* ── LOADING / ERROR ── */
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+}
+
+.loading-state .spinner {
+  width: 32px; height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-state {
+  background: #FFF5F5;
+  border: 1px solid #FCC;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  color: #922;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ── PAGINATION ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 1.5rem;
+}
+
+.pagination button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pagination button:hover:not(:disabled) { border-color: var(--navy); color: var(--navy); }
+.pagination button:disabled { opacity: 0.35; cursor: default; }
+.pagination .page-info { font-size: 13px; color: var(--text-muted); padding: 0 8px; }
+
+/* ── CUSTOM DATE PANEL ── */
+#customDateRow { display: none; }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="top-bar">
-    <h1><i class="ti ti-building-bank" style="font-size:18px; vertical-align:-2px; margin-right:6px;"></i>Bundestag Gesetze</h1>
-    <input type="text" id="searchInput" placeholder="Suche..." style="width:200px;" />
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <div class="logo-mark"><i class="ti ti-building-bank" style="font-size:16px;"></i></div>
+    <div>
+      <h1>Bundestag Monitor</h1>
+      <span>Parlamentarische Vorgänge</span>
+    </div>
   </div>
+  <div class="header-search">
+    <i class="ti ti-search search-icon"></i>
+    <input type="text" id="searchInput" placeholder="Titel suchen…" />
+  </div>
+</header>
 
-  <div class="filter-section">
+<!-- LAYOUT -->
+<div class="layout">
 
-    <!-- Wahlperiode -->
-    <div class="filter-row">
-      <span class="filter-label">Wahlperiode</span>
-      <select class="wp-select" id="wahlperiodeSelect">
-        <option value="21">21. Wahlperiode (2025 – heute)</option>
-        <option value="20">20. Wahlperiode (2021 – 2025)</option>
-        <option value="19">19. Wahlperiode (2017 – 2021)</option>
-        <option value="18">18. Wahlperiode (2013 – 2017)</option>
-        <option value="17">17. Wahlperiode (2009 – 2013)</option>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Wahlperiode</div>
+      <select class="sidebar-select" id="wahlperiodeSelect">
+        <option value="21">21. WP · 2025 – heute</option>
+        <option value="20">20. WP · 2021 – 2025</option>
+        <option value="19">19. WP · 2017 – 2021</option>
+        <option value="18">18. WP · 2013 – 2017</option>
+        <option value="17">17. WP · 2009 – 2013</option>
       </select>
     </div>
 
-    <!-- Zeitraum Schnellauswahl -->
-    <div class="filter-row" id="zeitraumRow">
-      <span class="filter-label">Zeitraum</span>
-      <button class="filter-btn active" data-zeitraum="">Alle</button>
-      <button class="filter-btn" data-zeitraum="7">Diese Woche</button>
-      <button class="filter-btn" data-zeitraum="30">Letzter Monat</button>
-      <button class="filter-btn" data-zeitraum="90">Letztes Quartal</button>
-      <button class="filter-btn" data-zeitraum="365">Letztes Jahr</button>
-      <button class="filter-btn" data-zeitraum="custom">Eigener Zeitraum</button>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Zeitraum</div>
+      <div class="filter-pills" id="zeitraumRow">
+        <button class="filter-pill active" data-zeitraum=""><span class="pill-dot"></span>Alle</button>
+        <button class="filter-pill" data-zeitraum="7"><span class="pill-dot"></span>Diese Woche</button>
+        <button class="filter-pill" data-zeitraum="30"><span class="pill-dot"></span>Letzter Monat</button>
+        <button class="filter-pill" data-zeitraum="90"><span class="pill-dot"></span>Letztes Quartal</button>
+        <button class="filter-pill" data-zeitraum="365"><span class="pill-dot"></span>Letztes Jahr</button>
+        <button class="filter-pill" data-zeitraum="custom"><span class="pill-dot"></span>Eigener Zeitraum</button>
+      </div>
+      <div id="customDateRow" style="margin-top:10px;">
+        <div class="date-inputs">
+          <input type="date" id="dateFrom" />
+          <input type="date" id="dateTo" />
+          <button class="clear-link" id="clearDates">Zurücksetzen</button>
+        </div>
+      </div>
     </div>
 
-    <!-- Bestimmter Monat -->
-    <div class="filter-row">
-      <span class="filter-label">Monat</span>
-      <select id="monatSelect" style="font-size:12px; padding:5px 10px; border-radius:8px; border:0.5px solid #ccc; background:#fff;">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Bestimmter Monat</div>
+      <select class="sidebar-select" id="monatSelect">
         <option value="">Alle Monate</option>
       </select>
     </div>
 
-    <!-- Sortierung -->
-    <div class="filter-row">
-      <span class="filter-label">Sortierung</span>
-      <button class="filter-btn active" id="sortBtn" data-sort="desc">
-        <i class="ti ti-arrow-down" style="font-size:12px; vertical-align:-1px;"></i> Neueste zuerst
+    <div class="sidebar-section">
+      <div class="sidebar-label">Vorgangstyp</div>
+      <div class="filter-pills" id="filterRow">
+        <button class="filter-pill active" data-typ=""><span class="pill-dot"></span>Alle Typen</button>
+      </div>
+      <div class="typ-hinweis" id="typHinweis"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Sortierung</div>
+      <button class="sort-toggle" id="sortBtn" data-sort="desc">
+        <span id="sortLabel">Neueste zuerst</span>
+        <i class="ti ti-arrows-sort" style="font-size:14px; color:var(--text-muted);"></i>
       </button>
     </div>
 
-    <!-- Eigener Zeitraum -->
-    <div class="filter-row" id="customDateRow" style="display:none;">
-      <span class="filter-label">Von / Bis</span>
-      <div class="date-range">
-        <input type="date" id="dateFrom" />
-        <span class="date-sep">bis</span>
-        <input type="date" id="dateTo" />
-        <button class="clear-btn" id="clearDates">× Zurücksetzen</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="stats-bar">
+      <div class="stat-chip">
+        <span class="chip-label">Geladen</span>
+        <span class="chip-value" id="statTotal">–</span>
+      </div>
+      <div class="stat-chip">
+        <span class="chip-label">Angezeigt</span>
+        <span class="chip-value" id="statShown">–</span>
+      </div>
+      <div class="stat-chip">
+        <span class="chip-label">Wahlperiode</span>
+        <span class="chip-value" id="statWP">21</span>
+      </div>
+      <div class="stat-chip">
+        <span class="chip-label">Zeitraum</span>
+        <span class="chip-value" id="statZeitraum" style="font-size:13px;">Alle</span>
       </div>
     </div>
 
-    <!-- Typ -->
-    <div class="filter-row">
-      <span class="filter-label">Typ</span>
-      <div style="display:flex; gap:6px; flex-wrap:wrap;" id="filterRow">
-        <button class="filter-btn active" data-typ="">Alle</button>
-      </div>
+    <div id="listContainer">
+      <div class="loading-state"><div class="spinner"></div>Daten werden geladen…</div>
     </div>
 
-  </div>
+    <div class="pagination" id="pagination" style="display:none;">
+      <button id="prevBtn">← Zurück</button>
+      <span class="page-info" id="pageInfo"></span>
+      <button id="nextBtn">Weiter →</button>
+    </div>
 
-  <div class="typ-hinweis" id="typHinweis"></div>
-
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">Geladen</div><div class="stat-value" id="statTotal">–</div></div>
-    <div class="stat-card"><div class="stat-label">Angezeigt</div><div class="stat-value" id="statShown">–</div></div>
-    <div class="stat-card"><div class="stat-label">Wahlperiode</div><div class="stat-value" id="statWP">21</div></div>
-    <div class="stat-card"><div class="stat-label">Zeitraum aktiv</div><div class="stat-value" id="statZeitraum" style="font-size:13px; padding-top:4px;">Alle</div></div>
-  </div>
-
-  <div id="listContainer"><div class="loading"><i class="ti ti-loader"></i> Daten werden geladen…</div></div>
-  <div class="pagination" id="pagination" style="display:none;">
-    <button id="prevBtn">← Zurück</button>
-    <span class="page-info" id="pageInfo"></span>
-    <button id="nextBtn">Weiter →</button>
-  </div>
+  </main>
 </div>
 
 <script>
@@ -150,88 +591,89 @@ const DIP_KEY = 'r7JUUMV.WhAvFobnOmMcRL7m87tKjlGHKnjpgqSEw8';
 const BASE = 'https://search.dip.bundestag.de/api/v1';
 
 const FRAKTION_FARBEN = {
-  'SPD':{ bg:'#FAECE7', color:'#993C1D' },
-  'CDU':{ bg:'#E6F1FB', color:'#0C447C' },
-  'CSU':{ bg:'#E6F1FB', color:'#185FA5' },
-  'CDU/CSU':{ bg:'#E6F1FB', color:'#0C447C' },
-  'Bündnis 90/Die Grünen':{ bg:'#EAF3DE', color:'#3B6D11' },
-  'Grüne':{ bg:'#EAF3DE', color:'#3B6D11' },
-  'FDP':{ bg:'#FAEEDA', color:'#633806' },
-  'AfD':{ bg:'#F1EFE8', color:'#444441' },
-  'Die Linke':{ bg:'#FBEAF0', color:'#723554' },
-  'BSW':{ bg:'#FBEAF0', color:'#72243E' },
+  'SPD':{ bg:'#FAECE7', color:'#8B2E14' },
+  'CDU':{ bg:'#E6F1FB', color:'#0C3E7A' },
+  'CSU':{ bg:'#E6F1FB', color:'#15518F' },
+  'CDU/CSU':{ bg:'#E6F1FB', color:'#0C3E7A' },
+  'Bündnis 90/Die Grünen':{ bg:'#E8F5E0', color:'#2A5C0A' },
+  'Grüne':{ bg:'#E8F5E0', color:'#2A5C0A' },
+  'FDP':{ bg:'#FEF8E1', color:'#7A5800' },
+  'AfD':{ bg:'#F0EEE8', color:'#3A3836' },
+  'Die Linke':{ bg:'#F8E8F0', color:'#6B2050' },
+  'BSW':{ bg:'#F8E8F0', color:'#6B1A36' },
 };
 
 const TYP_BESCHREIBUNG = {
   'Gesetzgebung': 'Konkreter Gesetzesentwurf, der in Kraft treten soll. Durchläuft mehrere Lesungen im Bundestag und wird abgestimmt. Ergebnis: neues oder geändertes Gesetz.',
-  'Antrag': 'Eine Fraktion fordert die Bundesregierung oder den Bundestag auf, etwas zu tun oder zu unterlassen. Kein direktes Gesetzgebungsverfahren – politisches Instrument zur Positionierung.',
-  'Große Anfrage': 'Schriftliche Anfrage einer Fraktion an die Bundesregierung zu einem komplexen Thema. Die Antwort der Regierung kann zu einer Plenardebatte führen.',
-  'Kleine Anfrage': 'Schriftliche Anfrage einer Fraktion oder von Abgeordneten an die Bundesregierung. Dient der Kontrolle – die Regierung muss schriftlich antworten, keine Debatte.',
-  'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Unterteilt in Kleine Anfrage (schriftlich) und Große Anfrage (kann zu Plenardebatte führen).',
-  'Aktuelle Stunde': 'Kurzfristig angesetzte Debatte im Plenum zu einem aktuellen, politisch bedeutsamen Thema. Beantragt von einer Fraktion oder einer Mindestanzahl von Abgeordneten.',
-  'Entschließungsantrag': 'Antrag auf eine politische Willensäußerung des Bundestages ohne direkte Gesetzesfolge. Oft als Reaktion auf eine Regierungserklärung oder eine Debatte eingebracht.',
-  'Wahl': 'Wahlvorgang im Bundestag – z.B. Wahl des Bundeskanzlers, von Bundesverfassungsrichtern oder anderen Amtsträgern.',
-  'Untersuchungsausschuss': 'Parlamentarisches Instrument zur Aufklärung von Missständen oder Fehlverhalten. Hat weitreichende Befugnisse zur Beweiserhebung.',
-  'Rechtsverordnung': 'Untergesetzliche Regelung, die von der Bundesregierung oder einem Ministerium auf Basis einer gesetzlichen Ermächtigung erlassen wird.',
-  'EU-Vorhaben': 'Vorgang im Zusammenhang mit einem Gesetzgebungsvorhaben oder einer politischen Initiative der Europäischen Union, zu dem der Bundestag Stellung nimmt.',
-  'Unterrichtung': 'Die Bundesregierung oder der Bundesrat informiert den Bundestag über ein bestimmtes Thema – z.B. Berichte, Jahresberichte oder Mitteilungen.',
-  'Bericht': 'Schriftlicher Bericht eines Ausschusses oder der Bundesregierung zu einem bestimmten Sachverhalt oder einer beauftragten Untersuchung.',
-  'Wahlprüfung': 'Überprüfung der Gültigkeit einer Bundestagswahl oder einzelner Mandate durch den Bundestag als zuständiges Organ.',
-  'Petition': 'Eingabe einer Bürgerin oder eines Bürgers an den Bundestag. Der Petitionsausschuss prüft und bewertet diese und kann sie an die Regierung weiterleiten.',
-  'Beschlussempfehlung': 'Empfehlung eines Ausschusses an das Plenum, wie über einen vorliegenden Antrag oder Gesetzentwurf abgestimmt werden soll.',
-  'Immunitätsangelegenheit': 'Verfahren zur Aufhebung der parlamentarischen Immunität eines Abgeordneten, z.B. zur Ermöglichung strafrechtlicher Ermittlungen.',
-  'Geschäftsordnung': 'Vorgang zur Änderung oder Auslegung der Geschäftsordnung des Bundestages, die die internen Verfahrensregeln regelt.',
+  'Antrag': 'Eine Fraktion fordert den Bundestag oder die Bundesregierung auf, etwas zu tun oder zu unterlassen. Kein Gesetzgebungsverfahren – politisches Positionierungsinstrument.',
+  'Große Anfrage': 'Schriftliche Anfrage einer Fraktion an die Bundesregierung zu einem größeren politischen Thema. Die Antwort wird im Plenum debattiert.',
+  'Kleine Anfrage': 'Schriftliche Anfrage einer Fraktion an die Bundesregierung. Die Regierung muss schriftlich antworten – keine Plenardebatte.',
+  'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Unterteilt in Kleine Anfrage und Große Anfrage.',
+  'Aktuelle Stunde': 'Kurzfristig angesetzte Plenardebatte zu einem aktuellen Thema. Dauert maximal eine Stunde.',
+  'Entschließungsantrag': 'Antrag auf eine politische Willensäußerung des Bundestages ohne direkte Gesetzesfolge.',
+  'Wahl': 'Wahlvorgang im Bundestag – z.B. Wahl des Bundeskanzlers oder von Bundesverfassungsrichtern.',
+  'Untersuchungsausschuss': 'Parlamentarisches Instrument zur Aufklärung von Missständen. Hat weitreichende Befugnisse zur Beweiserhebung.',
+  'Rechtsverordnung': 'Untergesetzliche Regelung, erlassen von der Bundesregierung oder einem Ministerium auf Basis einer gesetzlichen Ermächtigung.',
+  'EU-Vorhaben': 'Vorgang im Zusammenhang mit einem EU-Gesetzgebungsvorhaben, zu dem der Bundestag Stellung nimmt.',
+  'Unterrichtung': 'Die Bundesregierung informiert den Bundestag – z.B. Berichte, Jahresberichte oder Mitteilungen.',
+  'Bericht': 'Schriftlicher Bericht eines Ausschusses oder der Bundesregierung zu einem Sachverhalt.',
+  'Wahlprüfung': 'Überprüfung der Gültigkeit einer Bundestagswahl durch den Bundestag.',
+  'Petition': 'Eingabe einer Bürgerin oder eines Bürgers an den Bundestag. Der Petitionsausschuss prüft diese.',
+  'Beschlussempfehlung': 'Empfehlung eines Ausschusses an das Plenum, wie über eine Vorlage abgestimmt werden soll.',
+  'Immunitätsangelegenheit': 'Verfahren zur Aufhebung der parlamentarischen Immunität eines Abgeordneten.',
+  'Geschäftsordnung': 'Vorgang zur Änderung oder Auslegung der Geschäftsordnung des Bundestages.',
 };
 
 function slugify(text) {
   if (!text) return '';
   return text.toLowerCase()
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+    .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+    .replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim();
 }
 
 function getFraktionStyle(name) {
-  if (!name) return { bg:'#F1EFE8', color:'#444441' };
+  if (!name) return null;
   for (const key of Object.keys(FRAKTION_FARBEN)) {
     if (name.includes(key)) return FRAKTION_FARBEN[key];
   }
-  return { bg:'#F1EFE8', color:'#444441' };
+  return null;
 }
 
 function getStatusBadge(status) {
   if (!status) return { cls:'badge-gray', label:'Unbekannt' };
   const s = status.toLowerCase();
-  if (s.includes('beschlossen') || s.includes('verabschiedet') || s.includes('abgeschlossen')) return { cls:'badge-green', label:'Verabschiedet' };
-  if (s.includes('beratung') || s.includes('anhängig') || s.includes('überwiesen')) return { cls:'badge-blue', label:'In Beratung' };
-  if (s.includes('eingebracht') || s.includes('eingegangen')) return { cls:'badge-amber', label:'Eingebracht' };
-  if (s.includes('abgelehnt') || s.includes('erledigt')) return { cls:'badge-gray', label:'Abgeschlossen' };
-  return { cls:'badge-amber', label: status.substring(0,30) };
+  if (s.includes('beschlossen')||s.includes('verabschiedet')||s.includes('abgeschlossen')) return { cls:'badge-green', label:'Verabschiedet' };
+  if (s.includes('beratung')||s.includes('anhängig')||s.includes('überwiesen')) return { cls:'badge-blue', label:'In Beratung' };
+  if (s.includes('eingebracht')||s.includes('eingegangen')) return { cls:'badge-amber', label:'Eingebracht' };
+  if (s.includes('abgelehnt')||s.includes('erledigt')) return { cls:'badge-gray', label:'Abgeschlossen' };
+  return { cls:'badge-amber', label: status.substring(0,28) };
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 async function fetchVorgaenge(wahlperiode) {
   const allDocs = [];
   let cursor = null;
-  const maxPages = 5;
-
   const proxies = [
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
     url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     url => `https://cors.sh/${url}`,
   ];
-
   async function fetchPage(url) {
     for (const proxy of proxies) {
       try {
         const res = await fetch(proxy(url), { signal: AbortSignal.timeout(10000) });
         if (!res.ok) continue;
-        const data = await res.json();
-        return data;
+        return await res.json();
       } catch(e) { continue; }
     }
     return null;
   }
-
-  for (let page = 0; page < maxPages; page++) {
+  for (let page = 0; page < 5; page++) {
     const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'100' });
     if (cursor) params.set('cursor', cursor);
     const data = await fetchPage(`${BASE}/vorgang?${params}`);
@@ -240,23 +682,14 @@ async function fetchVorgaenge(wahlperiode) {
     cursor = data.cursor;
     if (!cursor) break;
   }
-
   return allDocs.length > 0 ? allDocs : null;
 }
 
 let allItems = [], filtered = [], currentPage = 0;
-const perPage = 10;
+const perPage = 15;
 let activeTyp = '', searchTerm = '', openId = null;
-let zeitraumTage = '';
-let dateFrom = '', dateTo = '';
-let sortDir = 'desc';
-let aktiverMonat = '';
-
-function parseDate(str) {
-  if (!str) return null;
-  const d = new Date(str);
-  return isNaN(d.getTime()) ? null : d;
-}
+let zeitraumTage = '', dateFrom = '', dateTo = '';
+let sortDir = 'desc', aktiverMonat = '';
 
 function getDateFilter() {
   if (dateFrom || dateTo) {
@@ -272,12 +705,9 @@ function getDateFilter() {
   }
   if (zeitraumTage && zeitraumTage !== 'custom') {
     const cutoff = new Date();
-    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setHours(0,0,0,0);
     cutoff.setDate(cutoff.getDate() - parseInt(zeitraumTage));
-    return item => {
-      const d = parseDate(item.datum);
-      return d !== null && d >= cutoff;
-    };
+    return item => { const d = parseDate(item.datum); return d !== null && d >= cutoff; };
   }
   return () => true;
 }
@@ -285,18 +715,16 @@ function getDateFilter() {
 function applyFilters() {
   const dateFn = getDateFilter();
   filtered = allItems.filter(item => {
-    const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp === activeTyp);
+    const matchTyp = !activeTyp || item.vorgangstyp === activeTyp;
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchMonat = !aktiverMonat || (item.datum && item.datum.startsWith(aktiverMonat));
     return matchTyp && matchSearch && dateFn(item) && matchMonat;
   });
-
   filtered.sort((a, b) => {
     const da = a.datum ? new Date(a.datum).getTime() : 0;
     const db = b.datum ? new Date(b.datum).getTime() : 0;
     return sortDir === 'desc' ? db - da : da - db;
   });
-
   currentPage = 0;
   document.getElementById('statShown').textContent = filtered.length;
   renderPage();
@@ -306,194 +734,155 @@ function renderPage() {
   const start = currentPage * perPage;
   const pageItems = filtered.slice(start, start + perPage);
   const container = document.getElementById('listContainer');
+
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty">Keine Einträge für diesen Zeitraum gefunden.</div>';
+    container.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty" style="font-size:32px; display:block; margin-bottom:8px;"></i>Keine Einträge gefunden.</div>';
     document.getElementById('pagination').style.display = 'none';
     return;
   }
-  container.innerHTML = '<div class="list" id="itemList"></div>';
-  const list = document.getElementById('itemList');
 
-  pageItems.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'item';
+  container.innerHTML = '<div class="card-list" id="cardList"></div>';
+  const list = document.getElementById('cardList');
+
+  pageItems.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = `${i * 30}ms`;
+
     const badge = getStatusBadge(item.beratungsstand);
     const fraktion = item.initiative?.[0] || '';
     const fStyle = getFraktionStyle(fraktion);
-    const datum = item.datum ? new Date(item.datum).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
+    const datum = item.datum ? new Date(item.datum).toLocaleDateString('de-DE', { day:'2-digit', month:'short', year:'numeric' }) : '';
     const titel = item.titel || '(kein Titel)';
-    const kurzTitel = titel.length > 120 ? titel.substring(0,120) + '…' : titel;
     const dipUrl = `https://dip.bundestag.de/vorgang/${slugify(titel)}/${item.id}`;
 
-    div.innerHTML = `
-      <div class="item-top">
-        <div class="item-title">${kurzTitel}</div>
-        <span class="badge ${badge.cls}">${badge.label}</span>
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-title">${titel}</div>
+        <span class="status-badge ${badge.cls}">${badge.label}</span>
       </div>
-      <div class="item-meta">
+      <div class="card-meta">
         ${datum ? `<span class="meta-item"><i class="ti ti-calendar" style="font-size:13px;"></i>${datum}</span>` : ''}
-        ${item.vorgangstyp ? `<span class="meta-item"><i class="ti ti-file-text" style="font-size:13px;"></i>${item.vorgangstyp}</span>` : ''}
-        ${fraktion ? `<span class="fraktion-pill" style="background:${fStyle.bg}; color:${fStyle.color};">${fraktion}</span>` : ''}
+        ${item.vorgangstyp ? `<span class="meta-item"><i class="ti ti-tag" style="font-size:13px;"></i>${item.vorgangstyp}</span>` : ''}
+        ${fStyle ? `<span class="fraktion-tag" style="background:${fStyle.bg}; color:${fStyle.color};">${fraktion}</span>` : ''}
       </div>
       <div class="detail-panel" id="detail-${item.id}">
-        <div class="detail-label">Vorgangsnummer</div>
-        <div class="detail-text">${item.id || '–'}</div>
-        ${item.beratungsstand ? `<div class="detail-label">Beratungsstand</div><div class="detail-text">${item.beratungsstand}</div>` : ''}
-        ${item.abstract ? `<div class="detail-label">Beschreibung</div><div class="detail-text">${item.abstract}</div>` : ''}
-        ${item.deskriptor ? `<div class="detail-label">Schlagworte</div><div class="detail-text">${item.deskriptor.map(d => d.name).join(', ')}</div>` : ''}
-        <a class="detail-link" href="${dipUrl}" target="_blank">
+        <div class="detail-grid">
+          ${item.id ? `<div class="detail-field"><div class="detail-field-label">Vorgangsnummer</div><div class="detail-field-value">${item.id}</div></div>` : ''}
+          ${item.beratungsstand ? `<div class="detail-field"><div class="detail-field-label">Beratungsstand</div><div class="detail-field-value">${item.beratungsstand}</div></div>` : ''}
+          ${item.abstract ? `<div class="detail-field wide"><div class="detail-field-label">Beschreibung</div><div class="detail-field-value">${item.abstract}</div></div>` : ''}
+          ${item.deskriptor ? `<div class="detail-field wide"><div class="detail-field-label">Schlagworte</div><div class="detail-field-value">${item.deskriptor.map(d => d.name).join(' · ')}</div></div>` : ''}
+        </div>
+        <a class="dip-link" href="${dipUrl}" target="_blank">
           <i class="ti ti-external-link" style="font-size:13px;"></i> Im Bundestag öffnen
         </a>
       </div>`;
 
-    div.addEventListener('click', (e) => {
-      if (e.target.closest('.detail-link')) return;
+    card.addEventListener('click', e => {
+      if (e.target.closest('.dip-link')) return;
       const panel = document.getElementById(`detail-${item.id}`);
       if (openId && openId !== item.id) {
         const old = document.getElementById(`detail-${openId}`);
-        if (old) old.classList.remove('open');
+        if (old) { old.classList.remove('open'); old.closest('.card')?.classList.remove('open'); }
       }
       panel.classList.toggle('open');
+      card.classList.toggle('open');
       openId = panel.classList.contains('open') ? item.id : null;
     });
 
-    list.appendChild(div);
+    list.appendChild(card);
   });
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const pg = document.getElementById('pagination');
   if (totalPages > 1) {
     pg.style.display = 'flex';
-    document.getElementById('pageInfo').textContent = `Seite ${currentPage + 1} von ${totalPages}`;
+    document.getElementById('pageInfo').textContent = `${currentPage + 1} / ${totalPages}`;
     document.getElementById('prevBtn').disabled = currentPage === 0;
     document.getElementById('nextBtn').disabled = currentPage >= totalPages - 1;
   } else { pg.style.display = 'none'; }
 }
 
 async function loadWahlperiode(wp) {
-  document.getElementById('listContainer').innerHTML = '<div class="loading"><i class="ti ti-loader"></i> Daten werden geladen… (bis zu 500 Einträge)</div>';
+  document.getElementById('listContainer').innerHTML = '<div class="loading-state"><div class="spinner"></div>Daten werden geladen…</div>';
   document.getElementById('pagination').style.display = 'none';
   document.getElementById('statTotal').textContent = '–';
   document.getElementById('statShown').textContent = '–';
   document.getElementById('statWP').textContent = wp;
 
-  aktiverMonat = '';
+  zeitraumTage = ''; dateFrom = ''; dateTo = ''; activeTyp = ''; searchTerm = ''; aktiverMonat = '';
   sortDir = 'desc';
-  const sortBtn = document.getElementById('sortBtn');
-  sortBtn.dataset.sort = 'desc';
-  sortBtn.innerHTML = '<i class="ti ti-arrow-down" style="font-size:12px; vertical-align:-1px;"></i> Neueste zuerst';
-  sortBtn.classList.add('active');
-  dateFrom = ''; dateTo = '';
-  activeTyp = '';
-  searchTerm = '';
   document.getElementById('searchInput').value = '';
   document.getElementById('dateFrom').value = '';
   document.getElementById('dateTo').value = '';
   document.getElementById('customDateRow').style.display = 'none';
   document.getElementById('statZeitraum').textContent = 'Alle';
-  document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('#zeitraumRow .filter-btn[data-zeitraum=""]').classList.add('active');
   document.getElementById('typHinweis').style.display = 'none';
+  document.getElementById('sortLabel').textContent = 'Neueste zuerst';
+  document.querySelectorAll('#zeitraumRow .filter-pill').forEach(b => b.classList.remove('active'));
+  document.querySelector('#zeitraumRow .filter-pill[data-zeitraum=""]').classList.add('active');
 
   const docs = await fetchVorgaenge(wp);
   if (!docs) {
-    document.getElementById('listContainer').innerHTML = `<div class="error-box"><strong>API nicht erreichbar.</strong><br>Alle Verbindungsversuche sind fehlgeschlagen. Bitte Seite neu laden.<br><a href="https://dip.bundestag.de" target="_blank" style="color:#a32d2d;">Direkt auf dip.bundestag.de öffnen</a></div>`;
+    document.getElementById('listContainer').innerHTML = `<div class="error-state"><strong>API nicht erreichbar.</strong><br>Bitte Seite neu laden oder später erneut versuchen.<br><a href="https://dip.bundestag.de" target="_blank" style="color:inherit;">dip.bundestag.de öffnen</a></div>`;
     return;
   }
 
   allItems = docs;
   document.getElementById('statTotal').textContent = docs.length;
 
-  // Datumsbereich der geladenen Daten anzeigen
   const daten = docs.map(d => d.datum).filter(Boolean).sort();
   if (daten.length) {
     const von = new Date(daten[0]).toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' });
     const bis = new Date(daten[daten.length-1]).toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' });
-    document.getElementById('statZeitraum').textContent = `${von} – ${bis}`;
+    document.getElementById('statZeitraum').textContent = `${von}–${bis}`;
   }
 
-  // Monats-Dropdown befüllen
   const monatsSet = new Set(docs.map(d => d.datum ? d.datum.substring(0,7) : null).filter(Boolean));
-  const monatsListe = [...monatsSet].sort().reverse();
   const monatSelect = document.getElementById('monatSelect');
   monatSelect.innerHTML = '<option value="">Alle Monate</option>';
-  monatsListe.forEach(m => {
-    const [jahr, monat] = m.split('-');
-    const label = new Date(parseInt(jahr), parseInt(monat)-1, 1).toLocaleDateString('de-DE', { month:'long', year:'numeric' });
+  [...monatsSet].sort().reverse().forEach(m => {
+    const [j, mo] = m.split('-');
+    const label = new Date(parseInt(j), parseInt(mo)-1, 1).toLocaleDateString('de-DE', { month:'long', year:'numeric' });
     const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = label;
+    opt.value = m; opt.textContent = label;
     monatSelect.appendChild(opt);
   });
-  aktiverMonat = '';
   monatSelect.value = '';
+
   const typen = [...new Set(docs.map(d => d.vorgangstyp).filter(Boolean))].sort();
   const filterRow = document.getElementById('filterRow');
-  filterRow.innerHTML = '<button class="filter-btn active" data-typ="">Alle</button>';
+  filterRow.innerHTML = '<button class="filter-pill active" data-typ=""><span class="pill-dot"></span>Alle Typen</button>';
   typen.forEach(typ => {
     const btn = document.createElement('button');
-    btn.className = 'filter-btn';
+    btn.className = 'filter-pill';
     btn.dataset.typ = typ;
-    btn.textContent = typ;
+    btn.innerHTML = `<span class="pill-dot"></span>${typ}`;
     filterRow.appendChild(btn);
   });
 
   applyFilters();
 }
 
-// Wahlperiode
-document.getElementById('wahlperiodeSelect').addEventListener('change', e => {
-  loadWahlperiode(e.target.value);
-});
+// Events
+document.getElementById('wahlperiodeSelect').addEventListener('change', e => loadWahlperiode(e.target.value));
 
-// Sortierung
-document.getElementById('sortBtn').addEventListener('click', () => {
-  const btn = document.getElementById('sortBtn');
-  sortDir = sortDir === 'desc' ? 'asc' : 'desc';
-  btn.dataset.sort = sortDir;
-  btn.innerHTML = sortDir === 'desc'
-    ? '<i class="ti ti-arrow-down" style="font-size:12px; vertical-align:-1px;"></i> Neueste zuerst'
-    : '<i class="ti ti-arrow-up" style="font-size:12px; vertical-align:-1px;"></i> Älteste zuerst';
-  applyFilters();
-});
-
-// Monat
-document.getElementById('monatSelect').addEventListener('change', e => {
-  aktiverMonat = e.target.value;
-  // Zeitraum-Schnellfilter deaktivieren wenn Monat gewählt
-  if (aktiverMonat) {
-    zeitraumTage = '';
-    dateFrom = ''; dateTo = '';
-    document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value = '';
-    document.getElementById('customDateRow').style.display = 'none';
-    document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('#zeitraumRow .filter-btn[data-zeitraum=""]').classList.add('active');
-  }
-  applyFilters();
-});
-
-// Zeitraum deaktiviert Monat-Auswahl
 document.getElementById('zeitraumRow').addEventListener('click', e => {
-  if (!e.target.classList.contains('filter-btn')) return;
-  if (e.target.dataset.zeitraum !== '') {
-    aktiverMonat = '';
-    document.getElementById('monatSelect').value = '';
-  }
-  document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
-  e.target.classList.add('active');
-  zeitraumTage = e.target.dataset.zeitraum;
-  const labels = { '':'Alle', '7':'Diese Woche', '30':'Dieser Monat', '90':'Dieses Quartal', '365':'Dieses Jahr', 'custom':'Eigener Zeitraum' };
+  const btn = e.target.closest('.filter-pill');
+  if (!btn) return;
+  document.querySelectorAll('#zeitraumRow .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  zeitraumTage = btn.dataset.zeitraum;
+  if (zeitraumTage !== '') { aktiverMonat = ''; document.getElementById('monatSelect').value = ''; }
+  const labels = { '':'Alle', '7':'Diese Woche', '30':'Letzter Monat', '90':'Letztes Quartal', '365':'Letztes Jahr', 'custom':'Eigener Zeitraum' };
   if (zeitraumTage) document.getElementById('statZeitraum').textContent = labels[zeitraumTage] || 'Eigener';
   dateFrom = ''; dateTo = '';
   document.getElementById('dateFrom').value = '';
   document.getElementById('dateTo').value = '';
-  const customRow = document.getElementById('customDateRow');
-  customRow.style.display = zeitraumTage === 'custom' ? 'flex' : 'none';
+  document.getElementById('customDateRow').style.display = zeitraumTage === 'custom' ? 'block' : 'none';
   if (zeitraumTage !== 'custom') applyFilters();
 });
 
-// Eigener Zeitraum
 document.getElementById('dateFrom').addEventListener('change', e => { dateFrom = e.target.value; applyFilters(); });
 document.getElementById('dateTo').addEventListener('change', e => { dateTo = e.target.value; applyFilters(); });
 document.getElementById('clearDates').addEventListener('click', () => {
@@ -503,12 +892,23 @@ document.getElementById('clearDates').addEventListener('click', () => {
   applyFilters();
 });
 
-// Typ
+document.getElementById('monatSelect').addEventListener('change', e => {
+  aktiverMonat = e.target.value;
+  if (aktiverMonat) {
+    zeitraumTage = ''; dateFrom = ''; dateTo = '';
+    document.querySelectorAll('#zeitraumRow .filter-pill').forEach(b => b.classList.remove('active'));
+    document.querySelector('#zeitraumRow .filter-pill[data-zeitraum=""]').classList.add('active');
+    document.getElementById('customDateRow').style.display = 'none';
+  }
+  applyFilters();
+});
+
 document.getElementById('filterRow').addEventListener('click', e => {
-  if (!e.target.classList.contains('filter-btn')) return;
-  document.querySelectorAll('#filterRow .filter-btn').forEach(b => b.classList.remove('active'));
-  e.target.classList.add('active');
-  activeTyp = e.target.dataset.typ;
+  const btn = e.target.closest('.filter-pill');
+  if (!btn) return;
+  document.querySelectorAll('#filterRow .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeTyp = btn.dataset.typ;
   const hinweis = document.getElementById('typHinweis');
   if (activeTyp) {
     hinweis.textContent = TYP_BESCHREIBUNG[activeTyp] || `Vorgangstyp „${activeTyp}" – keine Beschreibung hinterlegt.`;
@@ -519,14 +919,17 @@ document.getElementById('filterRow').addEventListener('click', e => {
   applyFilters();
 });
 
-// Suche
+document.getElementById('sortBtn').addEventListener('click', () => {
+  sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  document.getElementById('sortLabel').textContent = sortDir === 'desc' ? 'Neueste zuerst' : 'Älteste zuerst';
+  applyFilters();
+});
+
 document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; applyFilters(); });
 
-// Pagination
-document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); } });
-document.getElementById('nextBtn').addEventListener('click', () => { const tp = Math.ceil(filtered.length / perPage); if (currentPage < tp - 1) { currentPage++; renderPage(); } });
+document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); window.scrollTo(0,0); } });
+document.getElementById('nextBtn').addEventListener('click', () => { if (currentPage < Math.ceil(filtered.length/perPage)-1) { currentPage++; renderPage(); window.scrollTo(0,0); } });
 
-// Start
 loadWahlperiode('21');
 </script>
 </body>
