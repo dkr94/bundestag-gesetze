@@ -107,9 +107,6 @@
       <span class="filter-label">Typ</span>
       <div style="display:flex; gap:6px; flex-wrap:wrap;" id="filterRow">
         <button class="filter-btn active" data-typ="">Alle</button>
-        <button class="filter-btn" data-typ="Gesetzgebung">Gesetzgebung</button>
-        <button class="filter-btn" data-typ="Antrag">Antrag</button>
-        <button class="filter-btn" data-typ="Anfrage">Anfrage</button>
       </div>
     </div>
 
@@ -181,22 +178,39 @@ function getStatusBadge(status) {
 }
 
 async function fetchVorgaenge(wahlperiode) {
-  const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'200', sort:'datum desc' });
-  const targetUrl = `${BASE}/vorgang?${params}`;
+  const allDocs = [];
+  let cursor = null;
+  const maxPages = 5;
+
   const proxies = [
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
     url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     url => `https://cors.sh/${url}`,
   ];
-  for (const proxy of proxies) {
-    try {
-      const res = await fetch(proxy(targetUrl), { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data.documents) return data.documents;
-    } catch(e) { continue; }
+
+  async function fetchPage(url) {
+    for (const proxy of proxies) {
+      try {
+        const res = await fetch(proxy(url), { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) continue;
+        const data = await res.json();
+        return data;
+      } catch(e) { continue; }
+    }
+    return null;
   }
-  return null;
+
+  for (let page = 0; page < maxPages; page++) {
+    const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'100', sort:'datum desc' });
+    if (cursor) params.set('cursor', cursor);
+    const data = await fetchPage(`${BASE}/vorgang?${params}`);
+    if (!data || !data.documents || data.documents.length === 0) break;
+    allDocs.push(...data.documents);
+    cursor = data.cursor;
+    if (!cursor) break;
+  }
+
+  return allDocs.length > 0 ? allDocs : null;
 }
 
 let allItems = [], filtered = [], currentPage = 0;
@@ -316,7 +330,7 @@ function renderPage() {
 }
 
 async function loadWahlperiode(wp) {
-  document.getElementById('listContainer').innerHTML = '<div class="loading"><i class="ti ti-loader"></i> Daten werden geladen…</div>';
+  document.getElementById('listContainer').innerHTML = '<div class="loading"><i class="ti ti-loader"></i> Daten werden geladen… (bis zu 500 Einträge)</div>';
   document.getElementById('pagination').style.display = 'none';
   document.getElementById('statTotal').textContent = '–';
   document.getElementById('statShown').textContent = '–';
@@ -328,6 +342,20 @@ async function loadWahlperiode(wp) {
   }
   allItems = docs;
   document.getElementById('statTotal').textContent = docs.length;
+
+  // Typen dynamisch aus Daten generieren
+  const typen = [...new Set(docs.map(d => d.vorgangstyp).filter(Boolean))].sort();
+  const filterRow = document.getElementById('filterRow');
+  filterRow.innerHTML = '<button class="filter-btn active" data-typ="">Alle</button>';
+  typen.forEach(typ => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn';
+    btn.dataset.typ = typ;
+    btn.textContent = typ;
+    filterRow.appendChild(btn);
+  });
+  activeTyp = '';
+
   applyFilters();
 }
 
