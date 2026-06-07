@@ -85,10 +85,26 @@
       <span class="filter-label">Zeitraum</span>
       <button class="filter-btn active" data-zeitraum="">Alle</button>
       <button class="filter-btn" data-zeitraum="7">Diese Woche</button>
-      <button class="filter-btn" data-zeitraum="30">Dieser Monat</button>
-      <button class="filter-btn" data-zeitraum="90">Dieses Quartal</button>
-      <button class="filter-btn" data-zeitraum="365">Dieses Jahr</button>
+      <button class="filter-btn" data-zeitraum="30">Letzter Monat</button>
+      <button class="filter-btn" data-zeitraum="90">Letztes Quartal</button>
+      <button class="filter-btn" data-zeitraum="365">Letztes Jahr</button>
       <button class="filter-btn" data-zeitraum="custom">Eigener Zeitraum</button>
+    </div>
+
+    <!-- Bestimmter Monat -->
+    <div class="filter-row">
+      <span class="filter-label">Monat</span>
+      <select id="monatSelect" style="font-size:12px; padding:5px 10px; border-radius:8px; border:0.5px solid #ccc; background:#fff;">
+        <option value="">Alle Monate</option>
+      </select>
+    </div>
+
+    <!-- Sortierung -->
+    <div class="filter-row">
+      <span class="filter-label">Sortierung</span>
+      <button class="filter-btn active" id="sortBtn" data-sort="desc">
+        <i class="ti ti-arrow-down" style="font-size:12px; vertical-align:-1px;"></i> Neueste zuerst
+      </button>
     </div>
 
     <!-- Eigener Zeitraum -->
@@ -233,6 +249,8 @@ const perPage = 10;
 let activeTyp = '', searchTerm = '', openId = null;
 let zeitraumTage = '';
 let dateFrom = '', dateTo = '';
+let sortDir = 'desc';
+let aktiverMonat = '';
 
 function parseDate(str) {
   if (!str) return null;
@@ -269,8 +287,16 @@ function applyFilters() {
   filtered = allItems.filter(item => {
     const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp === activeTyp);
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchTyp && matchSearch && dateFn(item);
+    const matchMonat = !aktiverMonat || (item.datum && item.datum.startsWith(aktiverMonat));
+    return matchTyp && matchSearch && dateFn(item) && matchMonat;
   });
+
+  filtered.sort((a, b) => {
+    const da = a.datum ? new Date(a.datum).getTime() : 0;
+    const db = b.datum ? new Date(b.datum).getTime() : 0;
+    return sortDir === 'desc' ? db - da : da - db;
+  });
+
   currentPage = 0;
   document.getElementById('statShown').textContent = filtered.length;
   renderPage();
@@ -351,8 +377,12 @@ async function loadWahlperiode(wp) {
   document.getElementById('statShown').textContent = '–';
   document.getElementById('statWP').textContent = wp;
 
-  // Alle Filter zurücksetzen beim Wahlperiodenwechsel
-  zeitraumTage = '';
+  aktiverMonat = '';
+  sortDir = 'desc';
+  const sortBtn = document.getElementById('sortBtn');
+  sortBtn.dataset.sort = 'desc';
+  sortBtn.innerHTML = '<i class="ti ti-arrow-down" style="font-size:12px; vertical-align:-1px;"></i> Neueste zuerst';
+  sortBtn.classList.add('active');
   dateFrom = ''; dateTo = '';
   activeTyp = '';
   searchTerm = '';
@@ -382,7 +412,21 @@ async function loadWahlperiode(wp) {
     document.getElementById('statZeitraum').textContent = `${von} – ${bis}`;
   }
 
-  // Typen dynamisch generieren
+  // Monats-Dropdown befüllen
+  const monatsSet = new Set(docs.map(d => d.datum ? d.datum.substring(0,7) : null).filter(Boolean));
+  const monatsListe = [...monatsSet].sort().reverse();
+  const monatSelect = document.getElementById('monatSelect');
+  monatSelect.innerHTML = '<option value="">Alle Monate</option>';
+  monatsListe.forEach(m => {
+    const [jahr, monat] = m.split('-');
+    const label = new Date(parseInt(jahr), parseInt(monat)-1, 1).toLocaleDateString('de-DE', { month:'long', year:'numeric' });
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = label;
+    monatSelect.appendChild(opt);
+  });
+  aktiverMonat = '';
+  monatSelect.value = '';
   const typen = [...new Set(docs.map(d => d.vorgangstyp).filter(Boolean))].sort();
   const filterRow = document.getElementById('filterRow');
   filterRow.innerHTML = '<button class="filter-btn active" data-typ="">Alle</button>';
@@ -402,9 +446,40 @@ document.getElementById('wahlperiodeSelect').addEventListener('change', e => {
   loadWahlperiode(e.target.value);
 });
 
-// Zeitraum Schnellauswahl
+// Sortierung
+document.getElementById('sortBtn').addEventListener('click', () => {
+  const btn = document.getElementById('sortBtn');
+  sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  btn.dataset.sort = sortDir;
+  btn.innerHTML = sortDir === 'desc'
+    ? '<i class="ti ti-arrow-down" style="font-size:12px; vertical-align:-1px;"></i> Neueste zuerst'
+    : '<i class="ti ti-arrow-up" style="font-size:12px; vertical-align:-1px;"></i> Älteste zuerst';
+  applyFilters();
+});
+
+// Monat
+document.getElementById('monatSelect').addEventListener('change', e => {
+  aktiverMonat = e.target.value;
+  // Zeitraum-Schnellfilter deaktivieren wenn Monat gewählt
+  if (aktiverMonat) {
+    zeitraumTage = '';
+    dateFrom = ''; dateTo = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = '';
+    document.getElementById('customDateRow').style.display = 'none';
+    document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('#zeitraumRow .filter-btn[data-zeitraum=""]').classList.add('active');
+  }
+  applyFilters();
+});
+
+// Zeitraum deaktiviert Monat-Auswahl
 document.getElementById('zeitraumRow').addEventListener('click', e => {
   if (!e.target.classList.contains('filter-btn')) return;
+  if (e.target.dataset.zeitraum !== '') {
+    aktiverMonat = '';
+    document.getElementById('monatSelect').value = '';
+  }
   document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
   e.target.classList.add('active');
   zeitraumTage = e.target.dataset.zeitraum;
