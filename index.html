@@ -147,9 +147,24 @@ const FRAKTION_FARBEN = {
 };
 
 const TYP_BESCHREIBUNG = {
-  'Gesetzgebung': 'Konkreter Gesetzesentwurf, der in Kraft treten soll. Durchläuft mehrere Lesungen und wird abgestimmt. Ergebnis: neues oder geändertes Gesetz.',
-  'Antrag': 'Eine Fraktion fordert die Bundesregierung oder den Bundestag auf, etwas zu tun – ohne dass direkt ein Gesetz entsteht. Politisches Instrument, kein Gesetzgebungsverfahren.',
-  'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Die Regierung muss schriftlich antworten. Kleine Anfrage: nur schriftlich. Große Anfrage: kann zu einer Plenardebatte führen.',
+  'Gesetzgebung': 'Konkreter Gesetzesentwurf, der in Kraft treten soll. Durchläuft mehrere Lesungen im Bundestag und wird abgestimmt. Ergebnis: neues oder geändertes Gesetz.',
+  'Antrag': 'Eine Fraktion fordert die Bundesregierung oder den Bundestag auf, etwas zu tun oder zu unterlassen. Kein direktes Gesetzgebungsverfahren – politisches Instrument zur Positionierung.',
+  'Große Anfrage': 'Schriftliche Anfrage einer Fraktion an die Bundesregierung zu einem komplexen Thema. Die Antwort der Regierung kann zu einer Plenardebatte führen.',
+  'Kleine Anfrage': 'Schriftliche Anfrage einer Fraktion oder von Abgeordneten an die Bundesregierung. Dient der Kontrolle – die Regierung muss schriftlich antworten, keine Debatte.',
+  'Anfrage': 'Kontrollinstrument des Parlaments gegenüber der Regierung. Unterteilt in Kleine Anfrage (schriftlich) und Große Anfrage (kann zu Plenardebatte führen).',
+  'Aktuelle Stunde': 'Kurzfristig angesetzte Debatte im Plenum zu einem aktuellen, politisch bedeutsamen Thema. Beantragt von einer Fraktion oder einer Mindestanzahl von Abgeordneten.',
+  'Entschließungsantrag': 'Antrag auf eine politische Willensäußerung des Bundestages ohne direkte Gesetzesfolge. Oft als Reaktion auf eine Regierungserklärung oder eine Debatte eingebracht.',
+  'Wahl': 'Wahlvorgang im Bundestag – z.B. Wahl des Bundeskanzlers, von Bundesverfassungsrichtern oder anderen Amtsträgern.',
+  'Untersuchungsausschuss': 'Parlamentarisches Instrument zur Aufklärung von Missständen oder Fehlverhalten. Hat weitreichende Befugnisse zur Beweiserhebung.',
+  'Rechtsverordnung': 'Untergesetzliche Regelung, die von der Bundesregierung oder einem Ministerium auf Basis einer gesetzlichen Ermächtigung erlassen wird.',
+  'EU-Vorhaben': 'Vorgang im Zusammenhang mit einem Gesetzgebungsvorhaben oder einer politischen Initiative der Europäischen Union, zu dem der Bundestag Stellung nimmt.',
+  'Unterrichtung': 'Die Bundesregierung oder der Bundesrat informiert den Bundestag über ein bestimmtes Thema – z.B. Berichte, Jahresberichte oder Mitteilungen.',
+  'Bericht': 'Schriftlicher Bericht eines Ausschusses oder der Bundesregierung zu einem bestimmten Sachverhalt oder einer beauftragten Untersuchung.',
+  'Wahlprüfung': 'Überprüfung der Gültigkeit einer Bundestagswahl oder einzelner Mandate durch den Bundestag als zuständiges Organ.',
+  'Petition': 'Eingabe einer Bürgerin oder eines Bürgers an den Bundestag. Der Petitionsausschuss prüft und bewertet diese und kann sie an die Regierung weiterleiten.',
+  'Beschlussempfehlung': 'Empfehlung eines Ausschusses an das Plenum, wie über einen vorliegenden Antrag oder Gesetzentwurf abgestimmt werden soll.',
+  'Immunitätsangelegenheit': 'Verfahren zur Aufhebung der parlamentarischen Immunität eines Abgeordneten, z.B. zur Ermöglichung strafrechtlicher Ermittlungen.',
+  'Geschäftsordnung': 'Vorgang zur Änderung oder Auslegung der Geschäftsordnung des Bundestages, die die internen Verfahrensregeln regelt.',
 };
 
 function slugify(text) {
@@ -201,7 +216,7 @@ async function fetchVorgaenge(wahlperiode) {
   }
 
   for (let page = 0; page < maxPages; page++) {
-    const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'100', sort:'datum desc' });
+    const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'100' });
     if (cursor) params.set('cursor', cursor);
     const data = await fetchPage(`${BASE}/vorgang?${params}`);
     if (!data || !data.documents || data.documents.length === 0) break;
@@ -252,7 +267,7 @@ function getDateFilter() {
 function applyFilters() {
   const dateFn = getDateFilter();
   filtered = allItems.filter(item => {
-    const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp.includes(activeTyp));
+    const matchTyp = !activeTyp || (item.vorgangstyp && item.vorgangstyp === activeTyp);
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchTyp && matchSearch && dateFn(item);
   });
@@ -335,15 +350,39 @@ async function loadWahlperiode(wp) {
   document.getElementById('statTotal').textContent = '–';
   document.getElementById('statShown').textContent = '–';
   document.getElementById('statWP').textContent = wp;
+
+  // Alle Filter zurücksetzen beim Wahlperiodenwechsel
+  zeitraumTage = '';
+  dateFrom = ''; dateTo = '';
+  activeTyp = '';
+  searchTerm = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  document.getElementById('customDateRow').style.display = 'none';
+  document.getElementById('statZeitraum').textContent = 'Alle';
+  document.querySelectorAll('#zeitraumRow .filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('#zeitraumRow .filter-btn[data-zeitraum=""]').classList.add('active');
+  document.getElementById('typHinweis').style.display = 'none';
+
   const docs = await fetchVorgaenge(wp);
   if (!docs) {
     document.getElementById('listContainer').innerHTML = `<div class="error-box"><strong>API nicht erreichbar.</strong><br>Alle Verbindungsversuche sind fehlgeschlagen. Bitte Seite neu laden.<br><a href="https://dip.bundestag.de" target="_blank" style="color:#a32d2d;">Direkt auf dip.bundestag.de öffnen</a></div>`;
     return;
   }
+
   allItems = docs;
   document.getElementById('statTotal').textContent = docs.length;
 
-  // Typen dynamisch aus Daten generieren
+  // Datumsbereich der geladenen Daten anzeigen
+  const daten = docs.map(d => d.datum).filter(Boolean).sort();
+  if (daten.length) {
+    const von = new Date(daten[0]).toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' });
+    const bis = new Date(daten[daten.length-1]).toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' });
+    document.getElementById('statZeitraum').textContent = `${von} – ${bis}`;
+  }
+
+  // Typen dynamisch generieren
   const typen = [...new Set(docs.map(d => d.vorgangstyp).filter(Boolean))].sort();
   const filterRow = document.getElementById('filterRow');
   filterRow.innerHTML = '<button class="filter-btn active" data-typ="">Alle</button>';
@@ -354,7 +393,6 @@ async function loadWahlperiode(wp) {
     btn.textContent = typ;
     filterRow.appendChild(btn);
   });
-  activeTyp = '';
 
   applyFilters();
 }
@@ -371,7 +409,7 @@ document.getElementById('zeitraumRow').addEventListener('click', e => {
   e.target.classList.add('active');
   zeitraumTage = e.target.dataset.zeitraum;
   const labels = { '':'Alle', '7':'Diese Woche', '30':'Dieser Monat', '90':'Dieses Quartal', '365':'Dieses Jahr', 'custom':'Eigener Zeitraum' };
-  document.getElementById('statZeitraum').textContent = labels[zeitraumTage] || 'Eigener';
+  if (zeitraumTage) document.getElementById('statZeitraum').textContent = labels[zeitraumTage] || 'Eigener';
   dateFrom = ''; dateTo = '';
   document.getElementById('dateFrom').value = '';
   document.getElementById('dateTo').value = '';
@@ -397,8 +435,8 @@ document.getElementById('filterRow').addEventListener('click', e => {
   e.target.classList.add('active');
   activeTyp = e.target.dataset.typ;
   const hinweis = document.getElementById('typHinweis');
-  if (activeTyp && TYP_BESCHREIBUNG[activeTyp]) {
-    hinweis.textContent = TYP_BESCHREIBUNG[activeTyp];
+  if (activeTyp) {
+    hinweis.textContent = TYP_BESCHREIBUNG[activeTyp] || `Vorgangstyp „${activeTyp}" – keine Beschreibung hinterlegt.`;
     hinweis.style.display = 'block';
   } else {
     hinweis.style.display = 'none';
