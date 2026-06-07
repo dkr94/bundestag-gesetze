@@ -495,11 +495,28 @@ body {
 <!-- HEADER -->
 <header class="header">
   <div class="header-brand">
-    <img
-      src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Bundesadler_Bundesorgane.svg/80px-Bundesadler_Bundesorgane.svg.png"
-      alt="Bundesadler"
-      style="height:38px; width:auto; filter: brightness(0) invert(75%) sepia(60%) saturate(400%) hue-rotate(5deg) brightness(110%);"
-    />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 90" style="height:42px; width:auto;" aria-label="Bundesadler">
+      <!-- Körper -->
+      <ellipse cx="40" cy="52" rx="12" ry="16" fill="#E8A800"/>
+      <!-- Kopf -->
+      <circle cx="40" cy="28" r="9" fill="#E8A800"/>
+      <!-- Schnabel -->
+      <polygon points="40,32 47,36 40,38" fill="#CC1100"/>
+      <!-- Auge -->
+      <circle cx="43" cy="26" r="1.8" fill="#0E0E0E"/>
+      <!-- Linker Flügel -->
+      <path d="M28,45 C18,35 5,40 2,30 C8,28 16,32 22,38 C18,28 10,18 14,10 C20,14 24,24 26,34 C24,24 22,14 28,8 C32,14 30,26 30,38 C30,28 32,16 38,12 C40,20 36,30 34,40 Z" fill="#E8A800"/>
+      <!-- Rechter Flügel -->
+      <path d="M52,45 C62,35 75,40 78,30 C72,28 64,32 58,38 C62,28 70,18 66,10 C60,14 56,24 54,34 C56,24 58,14 52,8 C48,14 50,26 50,38 C50,28 48,16 42,12 C40,20 44,30 46,40 Z" fill="#E8A800"/>
+      <!-- Schwanz -->
+      <path d="M30,66 C28,74 24,80 22,86 C28,84 34,78 40,76 C46,78 52,84 58,86 C56,80 52,74 50,66 Z" fill="#E8A800"/>
+      <!-- Krallen links -->
+      <path d="M32,68 C28,72 24,72 22,70" stroke="#E8A800" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M30,70 C26,76 22,76 20,74" stroke="#E8A800" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Krallen rechts -->
+      <path d="M48,68 C52,72 56,72 58,70" stroke="#E8A800" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M50,70 C54,76 58,76 60,74" stroke="#E8A800" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    </svg>
     <div>
       <h1>Gesetzestracker</h1>
       <span>Parlamentarische Vorgänge</span>
@@ -676,7 +693,34 @@ function parseDate(str) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-async function fetchVorgaenge(wahlperiode) {
+// Bekannte Datumsrahmen je Wahlperiode
+const WP_ZEITRAUM = {
+  '21': { start: '2025-03-25', end: null },
+  '20': { start: '2021-10-26', end: '2025-03-24' },
+  '19': { start: '2017-10-24', end: '2021-10-25' },
+  '18': { start: '2013-10-22', end: '2017-10-23' },
+  '17': { start: '2009-10-27', end: '2013-10-21' },
+};
+
+function heuteISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// Alle Monate zwischen zwei Datumsstrings erzeugen
+function generiereMonatsliste(start, end) {
+  const result = [];
+  const s = new Date(start.substring(0,7) + '-01');
+  const e = new Date((end || heuteISO()).substring(0,7) + '-01');
+  while (s <= e) {
+    const key = s.toISOString().substring(0,7);
+    const label = s.toLocaleDateString('de-DE', { month:'long', year:'numeric' });
+    result.push({ key, label });
+    s.setMonth(s.getMonth() + 1);
+  }
+  return result.reverse();
+}
+
+async function fetchVorgaenge(wahlperiode, datumStart, datumEnd) {
   const allDocs = [];
   let cursor = null;
   const proxies = [
@@ -696,7 +740,9 @@ async function fetchVorgaenge(wahlperiode) {
   }
   for (let page = 0; page < 5; page++) {
     const params = new URLSearchParams({ apikey: DIP_KEY, 'f.wahlperiode': wahlperiode, format:'json', rows:'100' });
-    if (cursor) params.set('cursor', cursor);
+    if (datumStart) params.set('f.datum.start', datumStart);
+    if (datumEnd)   params.set('f.datum.end',   datumEnd);
+    if (cursor)     params.set('cursor',         cursor);
     const data = await fetchPage(`${BASE}/vorgang?${params}`);
     if (!data || !data.documents || data.documents.length === 0) break;
     allDocs.push(...data.documents);
@@ -708,38 +754,34 @@ async function fetchVorgaenge(wahlperiode) {
 
 let allItems = [], filtered = [], currentPage = 0;
 const perPage = 15;
+let aktiveWP = '21';
 let activeTyp = '', searchTerm = '', openId = null;
 let zeitraumTage = '', dateFrom = '', dateTo = '';
 let sortDir = 'desc', aktiverMonat = '';
 
-function getDateFilter() {
+// Berechnet Start/End-Datum für aktuellen Filter
+function getDatumRange() {
+  if (aktiverMonat) {
+    return { start: `${aktiverMonat}-01`, end: `${aktiverMonat}-31` };
+  }
   if (dateFrom || dateTo) {
-    const from = dateFrom ? parseDate(dateFrom) : null;
-    const to = dateTo ? parseDate(dateTo + 'T23:59:59') : null;
-    return item => {
-      const d = parseDate(item.datum);
-      if (!d) return false;
-      if (from && d < from) return false;
-      if (to && d > to) return false;
-      return true;
-    };
+    return { start: dateFrom || null, end: dateTo || null };
   }
   if (zeitraumTage && zeitraumTage !== 'custom') {
-    const cutoff = new Date();
-    cutoff.setHours(0,0,0,0);
-    cutoff.setDate(cutoff.getDate() - parseInt(zeitraumTage));
-    return item => { const d = parseDate(item.datum); return d !== null && d >= cutoff; };
+    const from = new Date();
+    from.setDate(from.getDate() - parseInt(zeitraumTage));
+    return { start: from.toISOString().split('T')[0], end: null };
   }
-  return () => true;
+  // Kein Zeitraumfilter – gesamter WP-Zeitraum
+  const wp = WP_ZEITRAUM[aktiveWP];
+  return { start: wp.start, end: wp.end || heuteISO() };
 }
 
 function applyFilters() {
-  const dateFn = getDateFilter();
   filtered = allItems.filter(item => {
     const matchTyp = !activeTyp || item.vorgangstyp === activeTyp;
     const matchSearch = !searchTerm || (item.titel && item.titel.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchMonat = !aktiverMonat || (item.datum && item.datum.startsWith(aktiverMonat));
-    return matchTyp && matchSearch && dateFn(item) && matchMonat;
+    return matchTyp && matchSearch;
   });
   filtered.sort((a, b) => {
     const da = a.datum ? new Date(a.datum).getTime() : 0;
@@ -749,6 +791,44 @@ function applyFilters() {
   currentPage = 0;
   document.getElementById('statShown').textContent = filtered.length;
   renderPage();
+}
+
+// Neue API-Abfrage mit aktuellem Datumsfilter
+async function reloadMitDatumFilter(label) {
+  document.getElementById('listContainer').innerHTML = '<div class="loading-state"><div class="spinner"></div>Daten werden geladen…</div>';
+  document.getElementById('pagination').style.display = 'none';
+  document.getElementById('statTotal').textContent = '–';
+  document.getElementById('statShown').textContent = '–';
+  if (label) document.getElementById('statZeitraum').textContent = label;
+
+  const { start, end } = getDatumRange();
+  const docs = await fetchVorgaenge(aktiveWP, start, end);
+  if (!docs) {
+    document.getElementById('listContainer').innerHTML = `<div class="error-state"><strong>API nicht erreichbar.</strong><br>Bitte Seite neu laden oder später erneut versuchen.</div>`;
+    return;
+  }
+  allItems = docs;
+  document.getElementById('statTotal').textContent = docs.length;
+  aktualisiereTypFilter(docs);
+  applyFilters();
+}
+
+function aktualisiereTypFilter(docs) {
+  const typen = [...new Set(docs.map(d => d.vorgangstyp).filter(Boolean))].sort();
+  const filterRow = document.getElementById('filterRow');
+  const prevTyp = activeTyp;
+  filterRow.innerHTML = '<button class="filter-pill active" data-typ=""><span class="pill-dot"></span>Alle Typen</button>';
+  typen.forEach(typ => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-pill' + (typ === prevTyp ? ' active' : '');
+    btn.dataset.typ = typ;
+    btn.innerHTML = `<span class="pill-dot"></span>${typ}`;
+    filterRow.appendChild(btn);
+  });
+  if (!typen.includes(prevTyp)) activeTyp = '';
+  if (activeTyp) {
+    document.querySelector(`#filterRow .filter-pill[data-typ=""]`)?.classList.remove('active');
+  }
 }
 
 function renderPage() {
@@ -825,12 +905,7 @@ function renderPage() {
 }
 
 async function loadWahlperiode(wp) {
-  document.getElementById('listContainer').innerHTML = '<div class="loading-state"><div class="spinner"></div>Daten werden geladen…</div>';
-  document.getElementById('pagination').style.display = 'none';
-  document.getElementById('statTotal').textContent = '–';
-  document.getElementById('statShown').textContent = '–';
-  document.getElementById('statWP').textContent = wp;
-
+  aktiveWP = wp;
   zeitraumTage = ''; dateFrom = ''; dateTo = ''; activeTyp = ''; searchTerm = ''; aktiverMonat = '';
   sortDir = 'desc';
   document.getElementById('searchInput').value = '';
@@ -838,51 +913,25 @@ async function loadWahlperiode(wp) {
   document.getElementById('dateTo').value = '';
   document.getElementById('customDateRow').style.display = 'none';
   document.getElementById('statZeitraum').textContent = 'Alle';
+  document.getElementById('statWP').textContent = wp;
   document.getElementById('typHinweis').style.display = 'none';
   document.getElementById('sortLabel').textContent = 'Neueste zuerst';
   document.querySelectorAll('#zeitraumRow .filter-pill').forEach(b => b.classList.remove('active'));
   document.querySelector('#zeitraumRow .filter-pill[data-zeitraum=""]').classList.add('active');
 
-  const docs = await fetchVorgaenge(wp);
-  if (!docs) {
-    document.getElementById('listContainer').innerHTML = `<div class="error-state"><strong>API nicht erreichbar.</strong><br>Bitte Seite neu laden oder später erneut versuchen.<br><a href="https://dip.bundestag.de" target="_blank" style="color:inherit;">dip.bundestag.de öffnen</a></div>`;
-    return;
-  }
-
-  allItems = docs;
-  document.getElementById('statTotal').textContent = docs.length;
-
-  const daten = docs.map(d => d.datum).filter(Boolean).sort();
-  if (daten.length) {
-    const von = new Date(daten[0]).toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' });
-    const bis = new Date(daten[daten.length-1]).toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' });
-    document.getElementById('statZeitraum').textContent = `${von}–${bis}`;
-  }
-
-  const monatsSet = new Set(docs.map(d => d.datum ? d.datum.substring(0,7) : null).filter(Boolean));
+  // Monats-Dropdown aus bekanntem WP-Zeitraum befüllen
+  const wpZ = WP_ZEITRAUM[wp];
+  const monate = generiereMonatsliste(wpZ.start, wpZ.end);
   const monatSelect = document.getElementById('monatSelect');
   monatSelect.innerHTML = '<option value="">Alle Monate</option>';
-  [...monatsSet].sort().reverse().forEach(m => {
-    const [j, mo] = m.split('-');
-    const label = new Date(parseInt(j), parseInt(mo)-1, 1).toLocaleDateString('de-DE', { month:'long', year:'numeric' });
+  monate.forEach(m => {
     const opt = document.createElement('option');
-    opt.value = m; opt.textContent = label;
+    opt.value = m.key; opt.textContent = m.label;
     monatSelect.appendChild(opt);
   });
   monatSelect.value = '';
 
-  const typen = [...new Set(docs.map(d => d.vorgangstyp).filter(Boolean))].sort();
-  const filterRow = document.getElementById('filterRow');
-  filterRow.innerHTML = '<button class="filter-pill active" data-typ=""><span class="pill-dot"></span>Alle Typen</button>';
-  typen.forEach(typ => {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pill';
-    btn.dataset.typ = typ;
-    btn.innerHTML = `<span class="pill-dot"></span>${typ}`;
-    filterRow.appendChild(btn);
-  });
-
-  applyFilters();
+  await reloadMitDatumFilter('Alle');
 }
 
 // Events
@@ -894,34 +943,43 @@ document.getElementById('zeitraumRow').addEventListener('click', e => {
   document.querySelectorAll('#zeitraumRow .filter-pill').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   zeitraumTage = btn.dataset.zeitraum;
-  if (zeitraumTage !== '') { aktiverMonat = ''; document.getElementById('monatSelect').value = ''; }
-  const labels = { '':'Alle', '7':'Diese Woche', '30':'Letzter Monat', '90':'Letztes Quartal', '365':'Letztes Jahr', 'custom':'Eigener Zeitraum' };
-  if (zeitraumTage) document.getElementById('statZeitraum').textContent = labels[zeitraumTage] || 'Eigener';
+  aktiverMonat = '';
+  document.getElementById('monatSelect').value = '';
   dateFrom = ''; dateTo = '';
   document.getElementById('dateFrom').value = '';
   document.getElementById('dateTo').value = '';
   document.getElementById('customDateRow').style.display = zeitraumTage === 'custom' ? 'block' : 'none';
-  if (zeitraumTage !== 'custom') applyFilters();
+  const labels = { '':'Alle', '7':'Diese Woche', '30':'Letzter Monat', '90':'Letztes Quartal', '365':'Letztes Jahr', 'custom':'Eigener Zeitraum' };
+  if (zeitraumTage !== 'custom') reloadMitDatumFilter(labels[zeitraumTage] || 'Eigener');
 });
 
-document.getElementById('dateFrom').addEventListener('change', e => { dateFrom = e.target.value; applyFilters(); });
-document.getElementById('dateTo').addEventListener('change', e => { dateTo = e.target.value; applyFilters(); });
+document.getElementById('dateFrom').addEventListener('change', e => {
+  dateFrom = e.target.value;
+  if (dateFrom || dateTo) reloadMitDatumFilter(`${dateFrom} – ${dateTo || '…'}`);
+});
+document.getElementById('dateTo').addEventListener('change', e => {
+  dateTo = e.target.value;
+  if (dateFrom || dateTo) reloadMitDatumFilter(`${dateFrom || '…'} – ${dateTo}`);
+});
 document.getElementById('clearDates').addEventListener('click', () => {
   dateFrom = ''; dateTo = '';
   document.getElementById('dateFrom').value = '';
   document.getElementById('dateTo').value = '';
-  applyFilters();
+  reloadMitDatumFilter('Alle');
 });
 
 document.getElementById('monatSelect').addEventListener('change', e => {
   aktiverMonat = e.target.value;
-  if (aktiverMonat) {
-    zeitraumTage = ''; dateFrom = ''; dateTo = '';
-    document.querySelectorAll('#zeitraumRow .filter-pill').forEach(b => b.classList.remove('active'));
-    document.querySelector('#zeitraumRow .filter-pill[data-zeitraum=""]').classList.add('active');
-    document.getElementById('customDateRow').style.display = 'none';
-  }
-  applyFilters();
+  zeitraumTage = ''; dateFrom = ''; dateTo = '';
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  document.getElementById('customDateRow').style.display = 'none';
+  document.querySelectorAll('#zeitraumRow .filter-pill').forEach(b => b.classList.remove('active'));
+  document.querySelector('#zeitraumRow .filter-pill[data-zeitraum=""]').classList.add('active');
+  const label = aktiverMonat
+    ? new Date(aktiverMonat + '-01').toLocaleDateString('de-DE', { month:'long', year:'numeric' })
+    : 'Alle';
+  reloadMitDatumFilter(label);
 });
 
 document.getElementById('filterRow').addEventListener('click', e => {
@@ -934,9 +992,7 @@ document.getElementById('filterRow').addEventListener('click', e => {
   if (activeTyp) {
     hinweis.textContent = TYP_BESCHREIBUNG[activeTyp] || `Vorgangstyp „${activeTyp}" – keine Beschreibung hinterlegt.`;
     hinweis.style.display = 'block';
-  } else {
-    hinweis.style.display = 'none';
-  }
+  } else { hinweis.style.display = 'none'; }
   applyFilters();
 });
 
@@ -947,7 +1003,6 @@ document.getElementById('sortBtn').addEventListener('click', () => {
 });
 
 document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; applyFilters(); });
-
 document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 0) { currentPage--; renderPage(); window.scrollTo(0,0); } });
 document.getElementById('nextBtn').addEventListener('click', () => { if (currentPage < Math.ceil(filtered.length/perPage)-1) { currentPage++; renderPage(); window.scrollTo(0,0); } });
 
